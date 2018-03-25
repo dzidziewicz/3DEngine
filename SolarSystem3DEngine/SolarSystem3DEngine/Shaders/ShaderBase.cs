@@ -7,15 +7,6 @@ namespace SolarSystem3DEngine.Shaders
 {
     public abstract class ShaderBase
     {
-        //public Vertex v1 { get; set; }
-        //public Vertex v2 { get; set; }
-        //public Vertex v3 { get; set; }
-        //protected Action<Point3D, Color> _drawPoint;
-
-        //protected ShaderBase(Action<Point3D, Color> drawPoint)
-        //{
-        //    //_drawPoint = drawPoint;
-        //}
         public BaseIllumination Illumination { get; set; }
         public Action<Point3D, Color> DrawPoint { get; set; }
 
@@ -40,6 +31,34 @@ namespace SolarSystem3DEngine.Shaders
             var y = (float)Computations.Interpolate(v1.Y, v2.Y, gradient);
             var z = (float)Computations.Interpolate(v1.Z, v2.Z, gradient);
             return new Vector3(x, y, z);
+        }
+
+        protected void SortVertices(ref Vertex v1, ref Vertex v2, ref Vertex v3)
+        {
+            // Sorting the points in order to always have this order on screen p1, p2 & p3
+            // with p1 always up (thus having the Y the lowest possible to be near the top screen)
+            // then p2 between p1 & p3
+
+            if (v1.Coordinates.Y > v2.Coordinates.Y)
+            {
+                var temp = v2;
+                v2 = v1;
+                v1 = temp;
+            }
+
+            if (v2.Coordinates.Y > v3.Coordinates.Y)
+            {
+                var temp = v2;
+                v2 = v3;
+                v3 = temp;
+            }
+
+            if (v1.Coordinates.Y > v2.Coordinates.Y)
+            {
+                var temp = v2;
+                v2 = v1;
+                v1 = temp;
+            }
         }
     }
 }

@@ -11,46 +11,11 @@ namespace SolarSystem3DEngine.Shaders
 
         public override void DrawTriangle(Vertex v1, Vertex v2, Vertex v3)
         {
-            // Sorting the points in order to always have this order on screen p1, p2 & p3
-            // with p1 always up (thus having the Y the lowest possible to be near the top screen)
-            // then p2 between p1 & p3
-            if (v1.Coordinates.Y > v2.Coordinates.Y)
-            {
-                var temp = v2;
-                v2 = v1;
-                v1 = temp;
-            }
-
-            if (v2.Coordinates.Y > v3.Coordinates.Y)
-            {
-                var temp = v2;
-                v2 = v3;
-                v3 = temp;
-            }
-
-            if (v1.Coordinates.Y > v2.Coordinates.Y)
-            {
-                var temp = v2;
-                v2 = v1;
-                v1 = temp;
-            }
+            SortVertices(ref v1, ref v2, ref v3);
 
             var p1 = v1.Coordinates;
             var p2 = v2.Coordinates;
             var p3 = v3.Coordinates;
-
-            // normal face's vector is the average normal between each vertex's normal
-            // computing also the center point of the face
-            ///var vnFace = (Vector3)(v1.Normal + v2.Normal + v3.Normal) / 3;
-            ///var centerPoint = (Vector3)(v1.WorldCoordinates + v2.WorldCoordinates + v3.WorldCoordinates) / 3;
-            // Light position 
-            //var lightPos = new Vector3(3, 1, 0);
-            // computing the cos of the angle between the light vector and the normal vector
-            // it will return a value between 0 and 1 that will be used as the intensity of the color
-            ///var ndotl = ComputeNDotL(centerPoint, vnFace, lightPos);
-            //var nl1 = Computations.ComputeNDotL(v1.WorldCoordinates, v1.Normal, lightPos);
-            //var nl2 = Computations.ComputeNDotL(v2.WorldCoordinates, v2.Normal, lightPos);
-            //var nl3 = Computations.ComputeNDotL(v3.WorldCoordinates, v3.Normal, lightPos);
 
             var viewerPosition = new Vector3(320, 240, 0);// Vector3.Zero;
             var color1 = Illumination.GetPixelColor(v1.Normal, viewerPosition, v1.WorldCoordinates);
@@ -67,7 +32,9 @@ namespace SolarSystem3DEngine.Shaders
             // First case where P2 is on the right of P1P3
             if (dP1P2 > dP1P3)
             {
-                for (var y = (int)p1.Y; y < (int)p2.Y; y++)
+                var endY = (int)(p2.Y + 0.5);
+
+                for (var y = (int)p1.Y; y < endY; y++)
                 {
                     data.CurrentY = y;
                     data.ColorA = color1;
@@ -76,8 +43,8 @@ namespace SolarSystem3DEngine.Shaders
                     data.ColorD = color2;
                     ProcessScanLine(data, v1, v3, v1, v2);
                 }
-
-                for (var y = (int)p2.Y; y <= (int)p3.Y; y++)
+                endY = (int)p3.Y;
+                for (var y = (int)p2.Y; y <= endY; y++)
                 {
                     data.CurrentY = y;
                     data.ColorA = color1;
@@ -90,7 +57,9 @@ namespace SolarSystem3DEngine.Shaders
             // First case where P2 is on the left of P1P3
             else
             {
-                for (var y = (int)p1.Y; y < (int)p2.Y; y++)
+                var endY = (int)(p2.Y + 0.5);
+
+                for (var y = (int)p1.Y; y < endY; y++)
                 {
                     data.CurrentY = y;
                     data.ColorA = color1;
@@ -99,8 +68,8 @@ namespace SolarSystem3DEngine.Shaders
                     data.ColorD = color3;
                     ProcessScanLine(data, v1, v2, v1, v3);
                 }
-
-                for (var y = (int)p2.Y; y <= (int)p3.Y; y++)
+                endY = (int)p3.Y;
+                for (var y = (int)p2.Y; y <= endY; y++)
                 {
                     data.CurrentY = y;
                     data.ColorA = color2;
@@ -135,21 +104,17 @@ namespace SolarSystem3DEngine.Shaders
             var z1 = Computations.Interpolate(pa.Z, pb.Z, gradient1);
             var z2 = Computations.Interpolate(pc.Z, pd.Z, gradient2);
 
-            //var snl = Computations.Interpolate(data.ndotla, data.ndotlb, gradient1);
-            //var enl = Computations.Interpolate(data.ndotlc, data.ndotld, gradient2);
-
             var sxColor = InterpolateColor(data.ColorA, data.ColorB, gradient1);
             var exColor = InterpolateColor(data.ColorC, data.ColorD, gradient2);
 
             // drawing a line from left (sx) to right (ex) 
-            for (var x = sx; x < ex; x++)
+            var gradient = 0d;
+            var step = 1d / (ex - sx);
+            for (var x = sx; x < ex; x++, gradient += step)
             {
-                var gradient = (x - sx) / (float)(ex - sx);
-
                 var z = Computations.Interpolate(z1, z2, gradient);
-                var color = InterpolateColor(sxColor, exColor, gradient); //data.ndotla;
-                                                                          // changing the color value using the cosine of the angle
-                                                                          // between the light vector and the normal vector
+                var color = InterpolateColor(sxColor, exColor, gradient); 
+
                 DrawPoint(new Point3D(x, data.CurrentY, z), color);
             }
         }

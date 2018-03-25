@@ -20,7 +20,7 @@
             <RadioButton Content="Goraud" IsChecked="{Binding GoraudShadingChecked, Mode=TwoWay}" Checked="GoraudShaderChecked" GroupName="Shader" />
             <RadioButton Content="Phong" Checked="PhongShaderChecked" GroupName="Shader" />
         </StackPanel>
-        <Image Grid.Column="0" Name="Image" Source="{Binding Bmp, Mode=TwoWay}" Stretch="Fill"
+        <Image Grid.Column="0" Name="Image" Source="{Binding Bmp, Mode=TwoWay}" Stretch="UniformToFill"
                Width="640" Height="480" />
     </Grid>
 </Window>

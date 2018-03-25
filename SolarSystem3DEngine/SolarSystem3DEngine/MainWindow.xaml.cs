@@ -37,7 +37,7 @@ namespace SolarSystem3DEngine
         public bool GoraudShadingChecked { get; set; }
 
         private DateTime _previousDate;
-        private Device device;
+        private Device _device;
         private Mesh[] _meshes;
         private ViewMatrixConfiguration _configuration;
         private ProjectionMatrixConfiguration _projectionMatrixConfiguration;
@@ -76,9 +76,8 @@ namespace SolarSystem3DEngine
             _goraudShaderWithBlinn = new GoraudShader(_blinn);
             _phongShaderWithPhong = new PhongShader(_phong);
             _phongShaderWithBlinn = new PhongShader(_blinn);
-            //device = new Device(Bmp, _phi, _configuration, _projectionMatrixConfiguration, _pointLights, _goraudShaderWithPhong);
 
-            //_meshes = LoadMeshes.LoadJsonFileAsync("Suzanne.babylon");
+//            _meshes = LoadMeshes.LoadJsonFileAsync("Suzanne.babylon");
             _meshes = LoadMeshes.LoadJsonFileAsync("sphere.babylon");
             _meshes[0].SetCoeffitients(new Vector3(0, 0 ,0), new Vector3(0.5f, 0.5f, 0.5f), new Vector3(0.5f, 0.5f, 0.5f)); //0.5f, 0.5f, 0.5f
 
@@ -106,14 +105,14 @@ namespace SolarSystem3DEngine
 
             Fps = $"{currentFps:0.00} fps";
             OnPropertyChanged("Fps");
-            device = new Device(Bmp, _phi, _configuration, _projectionMatrixConfiguration, _pointLights, _currentShader);
+            _device = new Device(Bmp, _phi, _configuration, _projectionMatrixConfiguration, _pointLights, _currentShader);
             Bmp.Lock();
-            device.Clear(0, 0, 0, 255);
+            _device.Clear(0, 0, 0, 255);
             
             // Doing the various matrix operations
-            device.Render(camera, _meshes);
+            _device.Render(camera, _meshes);
             // Flushing the back buffer into the front buffer
-            device.Present();
+            _device.Present();
             Bmp.Unlock();
         }
 
