@@ -11,7 +11,15 @@
             <ColumnDefinition Width="8*" />
             <ColumnDefinition Width="*" />
         </Grid.ColumnDefinitions>
-        <TextBlock Grid.Column="1" Text="{Binding Fps, Mode=TwoWay}"></TextBlock>
+        <StackPanel Grid.Column="1">
+            <TextBlock Text="{Binding Fps, Mode=TwoWay}" />
+            <TextBlock Text="Illumination" Margin="0 10 0 3"/>
+            <RadioButton Content="Phong" IsChecked="{Binding PhongIlluminationChecked, Mode=TwoWay}" Checked="PhongIlluminationChcecked" GroupName="Illumination" />
+            <RadioButton Content="Blinn" Checked="BlinnIlluminationChecked" GroupName="Illumination" />
+            <TextBlock Text="Shader" Margin="0 10 0 3"/>
+            <RadioButton Content="Goraud" IsChecked="{Binding GoraudShadingChecked, Mode=TwoWay}" Checked="GoraudShaderChecked" GroupName="Shader" />
+            <RadioButton Content="Phong" Checked="PhongShaderChecked" GroupName="Shader" />
+        </StackPanel>
         <Image Grid.Column="0" Name="Image" Source="{Binding Bmp, Mode=TwoWay}" Stretch="Fill"
                Width="640" Height="480" />
     </Grid>

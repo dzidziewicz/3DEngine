@@ -52,5 +52,10 @@ namespace SolarSystem3DEngine
             // BGRA is used by Windows instead by RGBA in HTML5
             return ((color.R << 16) | (color.G << 8) | (color.B << 0) | (0xFF << 24));
         }
+
+        public static float NormalizeCosinus(float cos)
+        {
+            return Math.Max(0, Math.Min(1, cos));
+        }
     }
 }

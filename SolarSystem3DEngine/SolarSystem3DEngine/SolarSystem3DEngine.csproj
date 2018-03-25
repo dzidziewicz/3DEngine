@@ -50,6 +50,7 @@
     <Reference Include="System.Data" />
     <Reference Include="System.Numerics" />
     <Reference Include="System.Runtime.Serialization" />
+    <Reference Include="System.Web" />
     <Reference Include="System.Xml" />
     <Reference Include="Microsoft.CSharp" />
     <Reference Include="System.Core" />
@@ -72,9 +73,18 @@
       <SubType>Designer</SubType>
     </ApplicationDefinition>
     <Compile Include="Computations.cs" />
+    <Compile Include="Illuminations\BaseIllumination.cs" />
+    <Compile Include="Illuminations\BlinnIllumination.cs" />
+    <Compile Include="Illuminations\PhongIllumination.cs" />
+    <Compile Include="LightSources\LightBase.cs" />
+    <Compile Include="LightSources\PointLight.cs" />
     <Compile Include="LoadMeshes.cs" />
+    <Compile Include="PhongScanlineData.cs" />
     <Compile Include="ProjectionMatrixConfiguration.cs" />
-    <Compile Include="ScanLineData.cs" />
+    <Compile Include="GoraudScanLineData.cs" />
+    <Compile Include="Shaders\GoraudShader.cs" />
+    <Compile Include="Shaders\PhongShader.cs" />
+    <Compile Include="Shaders\ShaderBase.cs" />
     <Compile Include="Vertex.cs" />
     <Compile Include="ViewMatrixConfiguration.cs" />
     <Page Include="MainWindow.xaml">
@@ -123,6 +133,9 @@
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
     <Content Include="Suzanne2.babylon">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="sphere.babylon">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
   </ItemGroup>

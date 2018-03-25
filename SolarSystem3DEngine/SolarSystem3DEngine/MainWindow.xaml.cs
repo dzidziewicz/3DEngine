@@ -18,6 +18,9 @@ using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
 using System.Windows.Threading;
+using SolarSystem3DEngine.Illuminations;
+using SolarSystem3DEngine.LightSources;
+using SolarSystem3DEngine.Shaders;
 using SolarSystem3DEngine.SoftEngine;
 
 namespace SolarSystem3DEngine
@@ -30,15 +33,26 @@ namespace SolarSystem3DEngine
     {
         public WriteableBitmap Bmp { get; set; }
         public string Fps { get; set; }
+        public bool PhongIlluminationChecked { get; set; }
+        public bool GoraudShadingChecked { get; set; }
 
         private DateTime _previousDate;
         private Device device;
-        Mesh[] meshes;// = new Mesh("Cube", 8, 12);
+        private Mesh[] _meshes;
         private ViewMatrixConfiguration _configuration;
         private ProjectionMatrixConfiguration _projectionMatrixConfiguration;
         Camera camera = new Camera();
         private DispatcherTimer _timer;
         private double _phi;
+        private PointLight[] _pointLights;
+        private GoraudShader _goraudShaderWithPhong;
+        private GoraudShader _goraudShaderWithBlinn;
+        private PhongShader _phongShaderWithPhong;
+        private PhongShader _phongShaderWithBlinn;
+        private ShaderBase _currentShader;
+        private PhongIllumination _phong;
+        private BlinnIllumination _blinn;
+
         public MainWindow()
         {
             InitializeComponent();
@@ -52,39 +66,21 @@ namespace SolarSystem3DEngine
             // Choose the back buffer resolution here
             Bmp = BitmapFactory.New((int)Image.Width, (int)Image.Height);
             Bmp.Clear(Colors.Red);
+            PhongIlluminationChecked = GoraudShadingChecked = true;
             _configuration = new ViewMatrixConfiguration();
             _projectionMatrixConfiguration = new ProjectionMatrixConfiguration(1, 100, 45, 1);
-            device = new Device(Bmp, _phi, _configuration, _projectionMatrixConfiguration);
+            _pointLights = new [] {new PointLight(new Vector3(3, 240, 10), Colors.White)};
+            _phong = new PhongIllumination(_pointLights);
+            _blinn = new BlinnIllumination(_pointLights);
+            _currentShader = _goraudShaderWithPhong = new GoraudShader(_phong);
+            _goraudShaderWithBlinn = new GoraudShader(_blinn);
+            _phongShaderWithPhong = new PhongShader(_phong);
+            _phongShaderWithBlinn = new PhongShader(_blinn);
+            //device = new Device(Bmp, _phi, _configuration, _projectionMatrixConfiguration, _pointLights, _goraudShaderWithPhong);
 
-            // Our XAML Image control
-            //Image.Source = Bmp;
-
-            //mesh.Vertices[0] = new Point3D(-1, 1, 1);
-            //mesh.Vertices[1] = new Point3D(1, 1, 1);
-            //mesh.Vertices[2] = new Point3D(-1, -1, 1);
-            //mesh.Vertices[3] = new Point3D(1, -1, 1);
-
-            //mesh.Faces[0] = new Face(0, 1, 2);
-            //mesh.Faces[1] = new Face(1, 2, 3);
-
-
-            //mesh.Vertices[4] = new Point3D(-1, 1, -1);
-            //mesh.Vertices[5] = new Point3D(1, 1, -1);
-            //mesh.Vertices[6] = new Point3D(-1, -1, -1);
-            //mesh.Vertices[7] = new Point3D(1, -1, -1);
-
-            //mesh.Faces[2] = new Face(4, 5, 6);
-            //mesh.Faces[3] = new Face(5, 6, 7);
-            //mesh.Faces[4] = new Face(1, 3, 5);
-            //mesh.Faces[5] = new Face(3, 5, 7);
-            //mesh.Faces[6] = new Face(0, 2, 4);
-            //mesh.Faces[7] = new Face(2, 4, 6);
-            //mesh.Faces[8] = new Face(0, 1, 4);
-            //mesh.Faces[9] = new Face(1, 4, 5);
-            //mesh.Faces[10] = new Face(2, 6, 7);
-            //mesh.Faces[11] = new Face(2, 3, 7);
-            meshes = LoadMeshes.LoadJsonFileAsync("Suzanne.babylon");
-
+            //_meshes = LoadMeshes.LoadJsonFileAsync("Suzanne.babylon");
+            _meshes = LoadMeshes.LoadJsonFileAsync("sphere.babylon");
+            _meshes[0].SetCoeffitients(new Vector3(0, 0 ,0), new Vector3(0.5f, 0.5f, 0.5f), new Vector3(0.5f, 0.5f, 0.5f)); //0.5f, 0.5f, 0.5f
 
 
             camera.Position = new Vector3(3.5f, 0.5f, 0.5f);
@@ -110,12 +106,12 @@ namespace SolarSystem3DEngine
 
             Fps = $"{currentFps:0.00} fps";
             OnPropertyChanged("Fps");
-            device = new Device(Bmp, _phi, _configuration, _projectionMatrixConfiguration);
+            device = new Device(Bmp, _phi, _configuration, _projectionMatrixConfiguration, _pointLights, _currentShader);
             Bmp.Lock();
             device.Clear(0, 0, 0, 255);
             
             // Doing the various matrix operations
-            device.Render(camera, meshes);
+            device.Render(camera, _meshes);
             // Flushing the back buffer into the front buffer
             device.Present();
             Bmp.Unlock();
@@ -179,5 +175,25 @@ namespace SolarSystem3DEngine
         protected virtual bool ThrowOnInvalidPropertyName { get; private set; }
 
         #endregion // Debugging Aides
+
+        private void PhongIlluminationChcecked(object sender, RoutedEventArgs e)
+        {
+            _currentShader = GoraudShadingChecked ? (ShaderBase) _goraudShaderWithPhong : _phongShaderWithPhong;
+        }
+
+        private void BlinnIlluminationChecked(object sender, RoutedEventArgs e)
+        {
+            _currentShader = GoraudShadingChecked ? (ShaderBase) _goraudShaderWithBlinn : _phongShaderWithBlinn;
+        }
+
+        private void GoraudShaderChecked(object sender, RoutedEventArgs e)
+        {
+            _currentShader = PhongIlluminationChecked ? _goraudShaderWithPhong : _goraudShaderWithBlinn;
+        }
+
+        private void PhongShaderChecked(object sender, RoutedEventArgs e)
+        {
+            _currentShader = PhongIlluminationChecked ? _phongShaderWithPhong : _phongShaderWithBlinn;
+        }
     }
 }

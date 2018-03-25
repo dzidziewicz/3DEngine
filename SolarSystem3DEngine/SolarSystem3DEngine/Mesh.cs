@@ -1,10 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Numerics;
-using System.Text;
-using System.Threading.Tasks;
-using SharpDX;
+﻿using System.Numerics;
 
 namespace SolarSystem3DEngine
 {
@@ -16,11 +10,22 @@ namespace SolarSystem3DEngine
         public Vector3 Rotation { get; set; }
         public Face[] Faces { get; set; }
 
+        public Vector3 KAmbient { get; set; }
+        public Vector3 KDiffuse { get; set; }
+        public Vector3 KSpecular { get; set; }
+
         public Mesh(string name, int verticesCount, int facesCount)
         {
             Vertices = new Vertex[verticesCount];
             Faces = new Face[facesCount];
             Name = name;
+        }
+
+        public void SetCoeffitients(Vector3 kAmbient, Vector3 kDiffuse, Vector3 kSpecular)
+        {
+            KAmbient = kAmbient;
+            KDiffuse = kDiffuse;
+            KSpecular = kSpecular;
         }
     }
 }
