@@ -5,7 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:SolarSystem3DEngine"
         mc:Ignorable="d"
-        Title="MainWindow" Height="480" Width="640">
+        Title="MainWindow" Height="750" Width="740">
     <Grid HorizontalAlignment="Stretch" VerticalAlignment="Stretch">
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="8*" />
@@ -20,7 +20,7 @@
             <RadioButton Content="Goraud" IsChecked="{Binding GoraudShadingChecked, Mode=TwoWay}" Checked="GoraudShaderChecked" GroupName="Shader" />
             <RadioButton Content="Phong" Checked="PhongShaderChecked" GroupName="Shader" />
         </StackPanel>
-        <Image Grid.Column="0" Name="Image" Source="{Binding Bmp, Mode=TwoWay}" Stretch="UniformToFill"
-               Width="640" Height="480" />
+        <Image Grid.Column="0" Name="Image" Source="{Binding Bmp, Mode=TwoWay}" Stretch="None"
+               Width="640" Height="640" />
     </Grid>
 </Window>

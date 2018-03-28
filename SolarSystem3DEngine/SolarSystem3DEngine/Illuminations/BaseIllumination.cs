@@ -32,7 +32,7 @@ namespace SolarSystem3DEngine.Illuminations
             {
                 var vectorToLight = Vector3.Normalize(light.Position - position);
                 var diffPlusSpec = GetDiffuse(vectorToLight, normal) +
-                                   GetSpecular(vectorToLight, vectorToViewer, normal, 50);
+                                   GetSpecular(vectorToLight, vectorToViewer, normal, 1);
                 intensity += Vector3.Multiply(light.Intensity, diffPlusSpec);
             }
 

@@ -5,7 +5,7 @@ namespace SolarSystem3DEngine.LightSources
 {
     public class PointLight : LightBase
     {
-        public PointLight(Vector3 position, Color color) : base(position, color)
+        public PointLight(Point3D position, Color color) : base(position, color)
         {
         }
     }

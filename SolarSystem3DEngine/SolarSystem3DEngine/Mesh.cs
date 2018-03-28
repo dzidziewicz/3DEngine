@@ -1,4 +1,5 @@
 ﻿using System.Numerics;
+using MathNet.Numerics.LinearAlgebra.Double;
 
 namespace SolarSystem3DEngine
 {
@@ -13,6 +14,8 @@ namespace SolarSystem3DEngine
         public Vector3 KAmbient { get; set; }
         public Vector3 KDiffuse { get; set; }
         public Vector3 KSpecular { get; set; }
+
+        public DenseMatrix ModelMatrix { get; set; }
 
         public Mesh(string name, int verticesCount, int facesCount)
         {

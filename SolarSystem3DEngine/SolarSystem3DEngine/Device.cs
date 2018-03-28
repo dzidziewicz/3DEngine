@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Numerics;
 using System.Threading.Tasks;
 using System.Windows;
@@ -18,17 +19,14 @@ namespace SolarSystem3DEngine
             private readonly int* _backBuffer;
             private readonly double[] _depthBuffer;
             private readonly WriteableBitmap _bmp;
-            private readonly DenseMatrix _modelMatrix;
-            private readonly DenseMatrix _transformationMatrix;
+            private readonly DenseMatrix _projectionViewMatrix;
             private readonly object[] _lockBuffer;
             private readonly int _renderWidth;
             private readonly int _renderHeight;
-            private readonly DenseMatrix _viewMatrix;
-            private readonly DenseMatrix _projectionMatrix;
             private readonly PointLight[] _pointLights;
             private readonly ShaderBase _shader;
 
-            public Device(WriteableBitmap bmp, double phi, ViewMatrixConfiguration configuration, ProjectionMatrixConfiguration projConfiguration,
+            public Device(WriteableBitmap bmp, DenseMatrix projectionViewMatrix,
                 PointLight[] pointLights, ShaderBase shader)
             {
                 _bmp = bmp;
@@ -45,16 +43,14 @@ namespace SolarSystem3DEngine
                     _lockBuffer[i] = new object();
                 }
 
-                _modelMatrix = DenseMatrix.OfArray(new double[,]
-                {
-                    {Math.Cos(phi), -Math.Sin(phi), 0, 0.5*Math.Sin(phi)},
-                    {Math.Sin(phi), Math.Cos(phi), 0, 0.5*Math.Sin(phi)},
-                    {0, 0, 1, 0.5*Math.Sin(phi)},
-                    {0, 0, 0, 1}
-                });
-                _viewMatrix = configuration.ViewMatrix;
-                _projectionMatrix = projConfiguration.ProjectionMatrix;
-                _transformationMatrix = _projectionMatrix * _viewMatrix * _modelMatrix;
+//                    = DenseMatrix.OfArray(new double[,]
+//                {
+//                    {Math.Cos(phi), -Math.Sin(phi), 0, Math.Sin(phi)},
+//                    {Math.Sin(phi), Math.Cos(phi), 0, Math.Cos(phi)},
+//                    {0, 0, 1, 0},
+//                    {0, 0, 0, 1}
+//                });
+                _projectionViewMatrix = projectionViewMatrix;// * _modelMatrix;
             }
 
             public void Clear(byte r, byte g, byte b, byte a)
@@ -87,8 +83,7 @@ namespace SolarSystem3DEngine
                 }
             }
 
-            // DrawPoint calls PutPixel but does the clipping operation before
-            private Vertex InvalidatePoint(Vertex vertex)
+            private Vertex InvalidatePoint(Vertex vertex, DenseMatrix modelMatrix)
             {
                 var vectorCoordinates = DenseMatrix.OfArray(new[,]
                 {
@@ -104,15 +99,15 @@ namespace SolarSystem3DEngine
                     {vertex.Normal.Z},
                     {vertex.Normal.W}
                 });
-                var pprim = _transformationMatrix * vectorCoordinates;
+                var pprim = _projectionViewMatrix * modelMatrix * vectorCoordinates;
                 var w = pprim[3, 0];
                 var newCoordinates = new Point3D(pprim) / w;
                 newCoordinates = Computations.Scale(newCoordinates, _renderWidth, _renderHeight);
 
-                var point3DWorld = _modelMatrix * vectorCoordinates;
+                var point3DWorld = modelMatrix * vectorCoordinates;
                 var new3DWorld = new Point3D(point3DWorld);
 
-                var normal3DWorld = _modelMatrix * vectorNormal;
+                var normal3DWorld = modelMatrix * vectorNormal;
                 var newNormal = new Point3D(normal3DWorld);
 
                 return new Vertex { Coordinates = newCoordinates, Normal = newNormal, WorldCoordinates = new3DWorld };
@@ -126,7 +121,7 @@ namespace SolarSystem3DEngine
 
             // The main method of the engine that re-compute each vertex projection during each frame
 
-            public void Render(Camera camera, params Mesh[] meshes)
+            public void Render(Camera camera, IEnumerable<Mesh> meshes)
             {
                 foreach (var mesh in meshes)
                 {
@@ -141,9 +136,9 @@ namespace SolarSystem3DEngine
                         var vertexB = mesh.Vertices[face.B];
                         var vertexC = mesh.Vertices[face.C];
 
-                        var pixelA = InvalidatePoint(vertexA);
-                        var pixelB = InvalidatePoint(vertexB);
-                        var pixelC = InvalidatePoint(vertexC);
+                        var pixelA = InvalidatePoint(vertexA, mesh.ModelMatrix);
+                        var pixelB = InvalidatePoint(vertexB, mesh.ModelMatrix);
+                        var pixelC = InvalidatePoint(vertexC, mesh.ModelMatrix);
 
                         _shader.DrawTriangle(pixelA, pixelB, pixelC);
                         //faceIndex++;

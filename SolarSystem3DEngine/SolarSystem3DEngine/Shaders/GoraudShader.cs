@@ -17,7 +17,7 @@ namespace SolarSystem3DEngine.Shaders
             var p2 = v2.Coordinates;
             var p3 = v3.Coordinates;
 
-            var viewerPosition = new Vector3(320, 240, 0);// Vector3.Zero;
+            var viewerPosition =  new Vector3(0.1f, 0f, -15);//new Vector3(320, 320, 0);// Vector3.Zero;
             var color1 = Illumination.GetPixelColor(v1.Normal, viewerPosition, v1.WorldCoordinates);
             var color2 = Illumination.GetPixelColor(v2.Normal, viewerPosition, v2.WorldCoordinates);
             var color3 = Illumination.GetPixelColor(v3.Normal, viewerPosition, v3.WorldCoordinates);
