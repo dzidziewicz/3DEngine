@@ -18,11 +18,13 @@ using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
 using System.Windows.Threading;
+using MathNet.Numerics.LinearAlgebra;
 using MathNet.Numerics.LinearAlgebra.Double;
 using SolarSystem3DEngine.Illuminations;
 using SolarSystem3DEngine.LightSources;
 using SolarSystem3DEngine.Shaders;
 using SolarSystem3DEngine.SoftEngine;
+using Matrix = MathNet.Numerics.LinearAlgebra.Double.Matrix;
 
 namespace SolarSystem3DEngine
 {
@@ -70,30 +72,31 @@ namespace SolarSystem3DEngine
             Bmp.Clear(Colors.Red);
             _meshes = new List<Mesh>();
             PhongIlluminationChecked = GoraudShadingChecked = true;
-            _camera.Position = new Vector3(0.1f, 0f, -15);
+            _camera.Position = new Vector3(0.1f, 0f, -5);
             _camera.Target = new Vector3(0, 0, 0);
             _configuration = new ViewMatrixConfiguration(_camera.Position, _camera.Target, new Vector3(0, 0, 1));
             _projectionMatrixConfiguration = new ProjectionMatrixConfiguration(1, 100, 45, 1);
             _projectionViewMatrix = _projectionMatrixConfiguration.ProjectionMatrix * _configuration.ViewMatrix;
-            _pointLights = new[] { new PointLight(new Point3D(0.1,0, 5), Colors.White) /*, new PointLight(new Vector3(0, 240, 10), Colors.Red)*/ };
+            _pointLights = new[] { new PointLight(new Point3D(0,0,0), Colors.White) /*, new PointLight(new Vector3(0, 240, 10), Colors.Red)*/ };
             foreach (var light in _pointLights)
             {
-//                var vectorCoordinates = DenseMatrix.OfArray(new[,]
-//                {
-//                    {light.Position.X},
-//                    {light.Position.Y},
-//                    {light.Position.Z},
-//                    {light.Position.W}
-//                });
-//                //light.Position = new Point3D( * vectorCoordinates);
-//                var modelMatrix = DenseMatrix.OfArray(new double[,]
-//                {
-//                    {1, 0, 0, 0},
-//                    {0, 1, 0, 0},
-//                    {0, 0, 1, 5},
-//                    {0, 0, 0, 1}
-//                });
-//                light.Position = new Point3D( modelMatrix * vectorCoordinates);
+                var vectorCoordinates = DenseMatrix.OfArray(new[,]
+                {
+                    {light.Position.X},
+                    {light.Position.Y},
+                    {light.Position.Z},
+                    {light.Position.W}
+                });
+                //light.Position = new Point3D( * vectorCoordinates);
+                var modelMatrix = DenseMatrix.OfArray(new double[,]
+                {
+                    {1, 0, 0, 0},
+                    {0, 1, 0, 0},
+                    {0, 0, 1, 0},
+                    {0, 0, 0, 1}
+                });
+                var p = new Point3D(_projectionViewMatrix * modelMatrix * vectorCoordinates);
+                light.Position = Computations.Scale(p / p.W, Bmp.PixelWidth, Bmp.PixelHeight);
             }
             _phong = new PhongIllumination(_pointLights);
             _blinn = new BlinnIllumination(_pointLights);
@@ -102,11 +105,12 @@ namespace SolarSystem3DEngine
             _phongShaderWithPhong = new PhongShader(_phong);
             _phongShaderWithBlinn = new PhongShader(_blinn);
 
-            var mesh = LoadMeshes.LoadJsonFileAsync("Suzanne.babylon");
-//             var mesh = LoadMeshes.LoadJsonFileAsync("sphere.babylon");
+//            var mesh = LoadMeshes.LoadJsonFileAsync("Suzanne.babylon");
+//            var mesh = LoadMeshes.LoadJsonFileAsync("plane.babylon");
+             var mesh = LoadMeshes.LoadJsonFileAsync("sphere.babylon");
 
             _meshes.Add(mesh);
-            _meshes[0].SetCoeffitients(new Vector3(0, 0, 0), new Vector3(0.5f, 0.5f, 0.5f), new Vector3(0.5f, 0.5f, 0.5f)); //0.5f, 0.5f, 0.5f
+            _meshes[0].SetCoeffitients(new Vector3(0, 0, 0), new Vector3(1,1,1), new Vector3(0,0,0)); //0.5f, 0.5f, 0.5f
             UpdateDevice();
 
 
@@ -147,12 +151,20 @@ namespace SolarSystem3DEngine
         {
             _meshes[0].ModelMatrix = DenseMatrix.OfArray(new double[,]
             {
-                {Math.Cos(_phi), -Math.Sin(_phi), 0, 4* Math.Sin(_phi)},
-                {Math.Sin(_phi), Math.Cos(_phi), 0, 4* Math.Cos(_phi)},
+                {Math.Cos(_phi), -Math.Sin(_phi), 0, 2* Math.Sin(_phi)},
+                {Math.Sin(_phi), Math.Cos(_phi), 0, 2* Math.Cos(_phi)},
                 {0, 0, 1, 0},
                 {0, 0, 0, 1}
+                //{1, 0, 0, 0},
+                //{0, 1, 0, 0},
+                //{0, 0, 1, 0},
+                //{0, 0, 0, 1}
             });
+
+            var x = Matrix<double>.Build.DenseOfRowMajor(4, 4, _meshes[0].ModelMatrix.Values);
+            _meshes[0].NormalMatrix = DenseMatrix.OfMatrix(x.Inverse().Transpose());
         }
+
 
         private void UpdateFps()
         {

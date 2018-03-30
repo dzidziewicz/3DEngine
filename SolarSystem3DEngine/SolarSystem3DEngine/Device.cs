@@ -83,7 +83,7 @@ namespace SolarSystem3DEngine
                 }
             }
 
-            private Vertex InvalidatePoint(Vertex vertex, DenseMatrix modelMatrix)
+            private Vertex InvalidatePoint(Vertex vertex, DenseMatrix modelMatrix, DenseMatrix normalMatrix)
             {
                 var vectorCoordinates = DenseMatrix.OfArray(new[,]
                 {
@@ -107,7 +107,7 @@ namespace SolarSystem3DEngine
                 var point3DWorld = modelMatrix * vectorCoordinates;
                 var new3DWorld = new Point3D(point3DWorld);
 
-                var normal3DWorld = modelMatrix * vectorNormal;
+                var normal3DWorld = normalMatrix * vectorNormal;
                 var newNormal = new Point3D(normal3DWorld);
 
                 return new Vertex { Coordinates = newCoordinates, Normal = newNormal, WorldCoordinates = new3DWorld };
@@ -136,9 +136,9 @@ namespace SolarSystem3DEngine
                         var vertexB = mesh.Vertices[face.B];
                         var vertexC = mesh.Vertices[face.C];
 
-                        var pixelA = InvalidatePoint(vertexA, mesh.ModelMatrix);
-                        var pixelB = InvalidatePoint(vertexB, mesh.ModelMatrix);
-                        var pixelC = InvalidatePoint(vertexC, mesh.ModelMatrix);
+                        var pixelA = InvalidatePoint(vertexA, mesh.ModelMatrix, mesh.NormalMatrix);
+                        var pixelB = InvalidatePoint(vertexB, mesh.ModelMatrix, mesh.NormalMatrix);
+                        var pixelC = InvalidatePoint(vertexC, mesh.ModelMatrix, mesh.NormalMatrix);
 
                         _shader.DrawTriangle(pixelA, pixelB, pixelC);
                         //faceIndex++;
