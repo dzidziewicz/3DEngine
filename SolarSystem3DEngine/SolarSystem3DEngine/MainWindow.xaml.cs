@@ -72,12 +72,12 @@ namespace SolarSystem3DEngine
             Bmp.Clear(Colors.Red);
             _meshes = new List<Mesh>();
             PhongIlluminationChecked = GoraudShadingChecked = true;
-            _camera.Position = new Vector3(0.1f, 0f, -5);
+            _camera.Position = new Vector3(0.1f, 0f, -15);
             _camera.Target = new Vector3(0, 0, 0);
             _configuration = new ViewMatrixConfiguration(_camera.Position, _camera.Target, new Vector3(0, 0, 1));
             _projectionMatrixConfiguration = new ProjectionMatrixConfiguration(1, 100, 45, 1);
             _projectionViewMatrix = _projectionMatrixConfiguration.ProjectionMatrix * _configuration.ViewMatrix;
-            _pointLights = new[] { new PointLight(new Point3D(0,0,0), Colors.White) /*, new PointLight(new Vector3(0, 240, 10), Colors.Red)*/ };
+            _pointLights = new[] { new PointLight(new Point3D(0, 0, -1), Colors.White) /*, new PointLight(new Vector3(0, 240, 10), Colors.Red)*/ };
             foreach (var light in _pointLights)
             {
                 var vectorCoordinates = DenseMatrix.OfArray(new[,]
@@ -95,8 +95,8 @@ namespace SolarSystem3DEngine
                     {0, 0, 1, 0},
                     {0, 0, 0, 1}
                 });
-                var p = new Point3D(_projectionViewMatrix * modelMatrix * vectorCoordinates);
-                light.Position = Computations.Scale(p / p.W, Bmp.PixelWidth, Bmp.PixelHeight);
+                var p = new Point3D(_configuration.ViewMatrix * vectorCoordinates);
+                light.Position = p;//Computations.Scale(p / p.W, Bmp.PixelWidth, Bmp.PixelHeight);
             }
             _phong = new PhongIllumination(_pointLights);
             _blinn = new BlinnIllumination(_pointLights);
@@ -105,12 +105,12 @@ namespace SolarSystem3DEngine
             _phongShaderWithPhong = new PhongShader(_phong);
             _phongShaderWithBlinn = new PhongShader(_blinn);
 
-//            var mesh = LoadMeshes.LoadJsonFileAsync("Suzanne.babylon");
-//            var mesh = LoadMeshes.LoadJsonFileAsync("plane.babylon");
-             var mesh = LoadMeshes.LoadJsonFileAsync("sphere.babylon");
+            //            var mesh = LoadMeshes.LoadJsonFileAsync("Suzanne.babylon");
+            //            var mesh = LoadMeshes.LoadJsonFileAsync("plane.babylon");
+            var mesh = LoadMeshes.LoadJsonFileAsync("sphere.babylon");
 
             _meshes.Add(mesh);
-            _meshes[0].SetCoeffitients(new Vector3(0, 0, 0), new Vector3(1,1,1), new Vector3(0,0,0)); //0.5f, 0.5f, 0.5f
+            _meshes[0].SetCoeffitients(new Vector3(0.2f, 0.2f, 0.2f), new Vector3(0.5f, 0.5f, 0.5f), new Vector3(0.5f, 0.5f, 0.5f)); //0.5f, 0.5f, 0.5f
             UpdateDevice();
 
 
@@ -149,19 +149,17 @@ namespace SolarSystem3DEngine
 
         private void UpdateEarthModelMatrix()
         {
-            _meshes[0].ModelMatrix = DenseMatrix.OfArray(new double[,]
+            var earthModelMatrix = DenseMatrix.OfArray(new double[,]
             {
                 {Math.Cos(_phi), -Math.Sin(_phi), 0, 2* Math.Sin(_phi)},
                 {Math.Sin(_phi), Math.Cos(_phi), 0, 2* Math.Cos(_phi)},
                 {0, 0, 1, 0},
                 {0, 0, 0, 1}
-                //{1, 0, 0, 0},
-                //{0, 1, 0, 0},
-                //{0, 0, 1, 0},
-                //{0, 0, 0, 1}
             });
+            var viewModel = _configuration.ViewMatrix * earthModelMatrix;
+            _meshes[0].ViewModelMatrix = viewModel;
 
-            var x = Matrix<double>.Build.DenseOfRowMajor(4, 4, _meshes[0].ModelMatrix.Values);
+            var x = Matrix<double>.Build.DenseOfColumnMajor(4, 4, viewModel.Values);
             _meshes[0].NormalMatrix = DenseMatrix.OfMatrix(x.Inverse().Transpose());
         }
 
@@ -179,7 +177,7 @@ namespace SolarSystem3DEngine
 
         private void UpdateDevice()
         {
-            _device = new Device(Bmp, _projectionViewMatrix, _pointLights, _currentShader);
+            _device = new Device(Bmp, _projectionMatrixConfiguration.ProjectionMatrix, _pointLights, _currentShader, _configuration.ViewMatrix);
         }
         #region INotifyPropertyChanged Members
 

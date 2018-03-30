@@ -15,7 +15,7 @@ namespace SolarSystem3DEngine
         public Vector3 KDiffuse { get; set; }
         public Vector3 KSpecular { get; set; }
 
-        public DenseMatrix ModelMatrix { get; set; }
+        public DenseMatrix ViewModelMatrix { get; set; }
         public DenseMatrix NormalMatrix { get; set; }
 
         public Mesh(string name, int verticesCount, int facesCount)

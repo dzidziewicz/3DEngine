@@ -55,7 +55,7 @@ namespace SolarSystem3DEngine
 
         public static float NormalizeCosinus(float cos)
         {
-            return Math.Max(0, Math.Min(1, cos));
+            return Math.Max(0, cos);
         }
     }
 }

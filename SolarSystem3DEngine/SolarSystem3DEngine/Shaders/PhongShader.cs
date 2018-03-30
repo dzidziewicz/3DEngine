@@ -17,7 +17,7 @@ namespace SolarSystem3DEngine.Shaders
             var p2 = v2.Coordinates;
             var p3 = v3.Coordinates;
 
-            var viewerPosition = new Vector3(320, 240, 0);
+            var viewerPosition = Vector3.Zero;//new Vector3(320, 240, 0);
 
             // inverse slopes
             var dP1P2 = (p2.Y - p1.Y > 0) ? (p2.X - p1.X) / (p2.Y - p1.Y) : 0;

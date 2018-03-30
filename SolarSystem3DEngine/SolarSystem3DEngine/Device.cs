@@ -19,19 +19,21 @@ namespace SolarSystem3DEngine
             private readonly int* _backBuffer;
             private readonly double[] _depthBuffer;
             private readonly WriteableBitmap _bmp;
-            private readonly DenseMatrix _projectionViewMatrix;
+            private readonly DenseMatrix _projectionMatrix;
+            private readonly DenseMatrix _viewMatrix;
             private readonly object[] _lockBuffer;
             private readonly int _renderWidth;
             private readonly int _renderHeight;
             private readonly PointLight[] _pointLights;
             private readonly ShaderBase _shader;
 
-            public Device(WriteableBitmap bmp, DenseMatrix projectionViewMatrix,
-                PointLight[] pointLights, ShaderBase shader)
+            public Device(WriteableBitmap bmp, DenseMatrix projectionMatrix, 
+                PointLight[] pointLights, ShaderBase shader, DenseMatrix viewMatrix)
             {
                 _bmp = bmp;
                 _pointLights = pointLights;
                 _shader = shader;
+                _viewMatrix = viewMatrix;
                 _shader.DrawPoint = DrawPoint;
                 _renderHeight = bmp.PixelHeight;
                 _renderWidth = bmp.PixelWidth;
@@ -50,7 +52,7 @@ namespace SolarSystem3DEngine
 //                    {0, 0, 1, 0},
 //                    {0, 0, 0, 1}
 //                });
-                _projectionViewMatrix = projectionViewMatrix;// * _modelMatrix;
+                _projectionMatrix = projectionMatrix;// * _modelMatrix;
             }
 
             public void Clear(byte r, byte g, byte b, byte a)
@@ -83,7 +85,7 @@ namespace SolarSystem3DEngine
                 }
             }
 
-            private Vertex InvalidatePoint(Vertex vertex, DenseMatrix modelMatrix, DenseMatrix normalMatrix)
+            private Vertex InvalidatePoint(Vertex vertex, DenseMatrix viewModelMatrix, DenseMatrix normalMatrix)
             {
                 var vectorCoordinates = DenseMatrix.OfArray(new[,]
                 {
@@ -99,16 +101,17 @@ namespace SolarSystem3DEngine
                     {vertex.Normal.Z},
                     {vertex.Normal.W}
                 });
-                var pprim = _projectionViewMatrix * modelMatrix * vectorCoordinates;
+                var pprim = _projectionMatrix * viewModelMatrix * vectorCoordinates;
                 var w = pprim[3, 0];
                 var newCoordinates = new Point3D(pprim) / w;
                 newCoordinates = Computations.Scale(newCoordinates, _renderWidth, _renderHeight);
 
-                var point3DWorld = modelMatrix * vectorCoordinates;
+                var point3DWorld = viewModelMatrix * vectorCoordinates;
                 var new3DWorld = new Point3D(point3DWorld);
 
                 var normal3DWorld = normalMatrix * vectorNormal;
                 var newNormal = new Point3D(normal3DWorld);
+                newNormal = newNormal / newNormal.W;
 
                 return new Vertex { Coordinates = newCoordinates, Normal = newNormal, WorldCoordinates = new3DWorld };
             }
@@ -136,9 +139,9 @@ namespace SolarSystem3DEngine
                         var vertexB = mesh.Vertices[face.B];
                         var vertexC = mesh.Vertices[face.C];
 
-                        var pixelA = InvalidatePoint(vertexA, mesh.ModelMatrix, mesh.NormalMatrix);
-                        var pixelB = InvalidatePoint(vertexB, mesh.ModelMatrix, mesh.NormalMatrix);
-                        var pixelC = InvalidatePoint(vertexC, mesh.ModelMatrix, mesh.NormalMatrix);
+                        var pixelA = InvalidatePoint(vertexA, mesh.ViewModelMatrix, mesh.NormalMatrix);
+                        var pixelB = InvalidatePoint(vertexB, mesh.ViewModelMatrix, mesh.NormalMatrix);
+                        var pixelC = InvalidatePoint(vertexC, mesh.ViewModelMatrix, mesh.NormalMatrix);
 
                         _shader.DrawTriangle(pixelA, pixelB, pixelC);
                         //faceIndex++;
