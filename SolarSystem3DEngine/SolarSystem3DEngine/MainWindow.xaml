@@ -19,6 +19,11 @@
             <TextBlock Text="Shader" Margin="0 10 0 3"/>
             <RadioButton Content="Goraud" IsChecked="{Binding GoraudShadingChecked, Mode=TwoWay}" Checked="GoraudShaderChecked" GroupName="Shader" />
             <RadioButton Content="Phong" Checked="PhongShaderChecked" GroupName="Shader" />
+
+            <TextBlock Text="Camera" Margin="0 10 0 3"/>
+            <RadioButton Content="Stationary" IsChecked="{Binding GoraudShadingChecked, Mode=TwoWay}" Checked="StationaryCameraChecked" GroupName="Camera" />
+            <RadioButton Content="Following Earth" Checked="FollowingEarthCameraChecked" GroupName="Camera" />
+
         </StackPanel>
         <Image Grid.Column="0" Name="Image" Source="{Binding Bmp, Mode=TwoWay}" Stretch="None"
                Width="640" Height="640" />

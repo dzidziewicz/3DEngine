@@ -1,9 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Numerics;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.Numerics;
 
 namespace SolarSystem3DEngine
 {
@@ -11,5 +6,11 @@ namespace SolarSystem3DEngine
     {
         public Vector3 Position { get; set; }
         public Vector3 Target { get; set; }
+
+        public Camera(Vector3 position, Vector3 target)
+        {
+            Position = position;
+            Target = target;
+        }
     }
 }

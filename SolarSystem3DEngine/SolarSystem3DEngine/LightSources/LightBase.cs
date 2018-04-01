@@ -6,6 +6,7 @@ namespace SolarSystem3DEngine.LightSources
     public class LightBase
     {
         public Point3D Position { get; set; }
+        public Point3D WorldPosition { get; set; }
         public Vector3 Intensity { get; set; }
         public Color Color { get; set; }
 

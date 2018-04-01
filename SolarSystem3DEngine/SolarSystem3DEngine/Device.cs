@@ -19,21 +19,17 @@ namespace SolarSystem3DEngine
             private readonly int* _backBuffer;
             private readonly double[] _depthBuffer;
             private readonly WriteableBitmap _bmp;
-            private readonly DenseMatrix _projectionMatrix;
-            private readonly DenseMatrix _viewMatrix;
             private readonly object[] _lockBuffer;
             private readonly int _renderWidth;
             private readonly int _renderHeight;
             private readonly PointLight[] _pointLights;
             private readonly ShaderBase _shader;
 
-            public Device(WriteableBitmap bmp, DenseMatrix projectionMatrix, 
-                PointLight[] pointLights, ShaderBase shader, DenseMatrix viewMatrix)
+            public Device(WriteableBitmap bmp, PointLight[] pointLights, ShaderBase shader)
             {
                 _bmp = bmp;
                 _pointLights = pointLights;
                 _shader = shader;
-                _viewMatrix = viewMatrix;
                 _shader.DrawPoint = DrawPoint;
                 _renderHeight = bmp.PixelHeight;
                 _renderWidth = bmp.PixelWidth;
@@ -45,14 +41,13 @@ namespace SolarSystem3DEngine
                     _lockBuffer[i] = new object();
                 }
 
-//                    = DenseMatrix.OfArray(new double[,]
-//                {
-//                    {Math.Cos(phi), -Math.Sin(phi), 0, Math.Sin(phi)},
-//                    {Math.Sin(phi), Math.Cos(phi), 0, Math.Cos(phi)},
-//                    {0, 0, 1, 0},
-//                    {0, 0, 0, 1}
-//                });
-                _projectionMatrix = projectionMatrix;// * _modelMatrix;
+                //                    = DenseMatrix.OfArray(new double[,]
+                //                {
+                //                    {Math.Cos(phi), -Math.Sin(phi), 0, Math.Sin(phi)},
+                //                    {Math.Sin(phi), Math.Cos(phi), 0, Math.Cos(phi)},
+                //                    {0, 0, 1, 0},
+                //                    {0, 0, 0, 1}
+                //                });
             }
 
             public void Clear(byte r, byte g, byte b, byte a)
@@ -85,7 +80,8 @@ namespace SolarSystem3DEngine
                 }
             }
 
-            private Vertex InvalidatePoint(Vertex vertex, DenseMatrix viewModelMatrix, DenseMatrix normalMatrix)
+            private Vertex InvalidatePoint(Vertex vertex, DenseMatrix viewModelMatrix,
+                DenseMatrix projectionViewModelMatrix, DenseMatrix normalMatrix)
             {
                 var vectorCoordinates = DenseMatrix.OfArray(new[,]
                 {
@@ -101,7 +97,7 @@ namespace SolarSystem3DEngine
                     {vertex.Normal.Z},
                     {vertex.Normal.W}
                 });
-                var pprim = _projectionMatrix * viewModelMatrix * vectorCoordinates;
+                var pprim = projectionViewModelMatrix * vectorCoordinates;
                 var w = pprim[3, 0];
                 var newCoordinates = new Point3D(pprim) / w;
                 newCoordinates = Computations.Scale(newCoordinates, _renderWidth, _renderHeight);
@@ -139,9 +135,9 @@ namespace SolarSystem3DEngine
                         var vertexB = mesh.Vertices[face.B];
                         var vertexC = mesh.Vertices[face.C];
 
-                        var pixelA = InvalidatePoint(vertexA, mesh.ViewModelMatrix, mesh.NormalMatrix);
-                        var pixelB = InvalidatePoint(vertexB, mesh.ViewModelMatrix, mesh.NormalMatrix);
-                        var pixelC = InvalidatePoint(vertexC, mesh.ViewModelMatrix, mesh.NormalMatrix);
+                        var pixelA = InvalidatePoint(vertexA, mesh.ViewModelMatrix, mesh.ProjectionViewModelMatrix, mesh.NormalMatrix);
+                        var pixelB = InvalidatePoint(vertexB, mesh.ViewModelMatrix, mesh.ProjectionViewModelMatrix, mesh.NormalMatrix);
+                        var pixelC = InvalidatePoint(vertexC, mesh.ViewModelMatrix, mesh.ProjectionViewModelMatrix, mesh.NormalMatrix);
 
                         _shader.DrawTriangle(pixelA, pixelB, pixelC);
                         //faceIndex++;
