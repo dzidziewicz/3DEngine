@@ -36,17 +36,19 @@ namespace SolarSystem3DEngine
         private ProjectionMatrixConfiguration _projectionMatrixConfiguration;
         private DenseMatrix _projectionViewMatrix;
         private Camera _stationaryCamera;
-        private Camera _currentCamera;
         private Camera _followingEarthCamera;
+        private Camera _currentCamera;
         private PointLight[] _pointLights;
         private GoraudShader _goraudShaderWithPhong;
+        private Mesh _earth;
+        private Mesh _sun;
 
         #region Constants
 
         private readonly Vector3 _cameraPosition = new Vector3(11f, 1f, -15);
         private readonly Vector3 _stationaryCameraTarget = new Vector3(1, 1, 0);
-        private readonly Func<double, double> _earthModelCoordinateOriginX = (phi) => 1 + 2 * Math.Sin(phi);
-        private readonly Func<double, double> _earthModelCoordinateOriginY = (phi) => 1 + 2 * Math.Cos(phi);
+        private readonly Func<double, double> _earthModelCoordinateOriginX = (phi) => 1 + 4 * Math.Sin(phi);
+        private readonly Func<double, double> _earthModelCoordinateOriginY = (phi) => 1 + 4 * Math.Cos(phi);
         private readonly Point3D _lightPosition = new Point3D(1, 1, -1);
         #endregion
         private void Page_Loaded()
@@ -54,11 +56,19 @@ namespace SolarSystem3DEngine
             // Choose the back buffer resolution here
             Bmp = BitmapFactory.New((int)Image.Width, (int)Image.Height);
             _meshes = new List<Mesh>();
-//            var mesh = LoadMeshes.LoadJsonFileAsync("Suzanne.babylon");
-            //            var mesh = LoadMeshes.LoadJsonFileAsync("plane.babylon");
-                        var mesh = LoadMeshes.LoadJsonFileAsync("sphere.babylon");
-            _meshes.Add(mesh);
-            _meshes[0].SetCoeffitients(new Vector3(0.2f, 0.2f, 0.2f), new Vector3(0.5f, 0.5f, 0.5f), new Vector3(0.5f, 0.5f, 0.5f)); //0.5f, 0.5f, 0.5f
+            _earth = LoadMeshes.LoadJsonFileAsync("Suzanne.babylon");
+            //            var _earth = LoadMeshes.LoadJsonFileAsync("plane.babylon");
+            //                        var _earth = LoadMeshes.LoadJsonFileAsync("sphere.babylon");
+            _earth.SetCoeffitients(new Vector3(50, 50, 50), new Vector3(0.5f, 0.5f, 0.5f), new Vector3(0.5f, 0.5f, 0.5f)); //0.5f, 0.5f, 0.5f
+            _meshes.Add(_earth);
+
+            _sun = LoadMeshes.LoadJsonFileAsync("sphere.babylon");
+            _sun.SetCoeffitients(new Vector3(50, 0, 0), new Vector3(0.5f, 0.5f, 0.5f), new Vector3(0.5f, 0.5f, 0.5f)); //0.5f, 0.5f, 0.5f
+            _meshes.Add(_sun);
+
+            var deathStar = LoadMeshes.LoadJsonFileAsync("sphere.babylon");
+            deathStar.SetCoeffitients(new Vector3(50, 0, 0), new Vector3(0.5f, 0.5f, 0.5f), new Vector3(0.5f, 0.5f, 0.5f)); //0.5f, 0.5f, 0.5f
+            _meshes.Add(deathStar);
 
             PhongIlluminationChecked = GoraudShadingChecked = true;
             _currentCamera = _stationaryCamera = new Camera(_cameraPosition, _stationaryCameraTarget);
@@ -69,6 +79,8 @@ namespace SolarSystem3DEngine
             _projectionMatrixConfiguration = new ProjectionMatrixConfiguration(1, 100, 45, 1);
             _pointLights = new[] { new PointLight(_lightPosition, Colors.White) /*, new PointLight(new Vector3(0, 240, 10), Colors.Red)*/ };
             UpdateMatricesConfigurations();
+            UpdateSunModelMatrix();
+            UpdateDeathStarModelMatrix();
             _phong = new PhongIllumination(_pointLights);
             _blinn = new BlinnIllumination(_pointLights);
             _currentShader = _goraudShaderWithPhong = new GoraudShader(_phong);
@@ -111,7 +123,11 @@ namespace SolarSystem3DEngine
         {
             _phi += 0.01;
             if (_currentCamera.Equals(_followingEarthCamera))
+            {
                 UpdateFollowingEarthCamera();
+                UpdateSunModelMatrix();
+                UpdateDeathStarModelMatrix();
+            }
             UpdateEarthModelMatrix();
 
             UpdateFps();
@@ -155,17 +171,52 @@ namespace SolarSystem3DEngine
                 {0, 0, 0, 1}
             });
             var viewModelMatrix = _configuration.ViewMatrix * earthModelMatrix;
-            _meshes[0].ViewModelMatrix = viewModelMatrix;
+            _earth.ViewModelMatrix = viewModelMatrix;
 
-            _meshes[0].ProjectionViewModelMatrix = _projectionMatrixConfiguration.ProjectionMatrix * viewModelMatrix;
+            _earth.ProjectionViewModelMatrix = _projectionMatrixConfiguration.ProjectionMatrix * viewModelMatrix;
 
             var invertedNormalMatrix = Matrix<double>.Build.DenseOfColumnMajor(4, 4, viewModelMatrix.Values);
-            _meshes[0].NormalMatrix = DenseMatrix.OfMatrix(invertedNormalMatrix.Inverse().Transpose());
+            _earth.NormalMatrix = DenseMatrix.OfMatrix(invertedNormalMatrix.Inverse().Transpose());
+        }
+
+        private void UpdateSunModelMatrix()
+        {
+            var modelMatrix = DenseMatrix.OfArray(new double[,]
+            {
+                {1, 0, 0, 1},
+                {0, 1, 0, 1},
+                {0, 0, 1, 0},
+                {0, 0, 0, 1}
+            });
+            var viewModelMatrix = _configuration.ViewMatrix * modelMatrix;
+            _sun.ViewModelMatrix = viewModelMatrix;
+
+            _sun.ProjectionViewModelMatrix = _projectionMatrixConfiguration.ProjectionMatrix * viewModelMatrix;
+
+            var invertedNormalMatrix = Matrix<double>.Build.DenseOfColumnMajor(4, 4, viewModelMatrix.Values);
+            _sun.NormalMatrix = DenseMatrix.OfMatrix(invertedNormalMatrix.Inverse().Transpose());
+        }
+
+        private void UpdateDeathStarModelMatrix()
+        {
+            var modelMatrix = DenseMatrix.OfArray(new double[,]
+            {
+                {1, 0, 0, 4},
+                {0, 1, 0, 4},
+                {0, 0, 1, 0},
+                {0, 0, 0, 1}
+            });
+            var viewModelMatrix = _configuration.ViewMatrix * modelMatrix;
+            _meshes[2].ViewModelMatrix = viewModelMatrix;
+
+            _meshes[2].ProjectionViewModelMatrix = _projectionMatrixConfiguration.ProjectionMatrix * viewModelMatrix;
+
+            var invertedNormalMatrix = Matrix<double>.Build.DenseOfColumnMajor(4, 4, viewModelMatrix.Values);
+            _meshes[2].NormalMatrix = DenseMatrix.OfMatrix(invertedNormalMatrix.Inverse().Transpose());
         }
 
         private void UpdateFollowingEarthCamera()
         {
-
             _followingEarthCamera.Target = new Vector3((float)_earthModelCoordinateOriginX(_phi),
                 (float)_earthModelCoordinateOriginY(_phi), 0);
             UpdateMatricesConfigurations();
@@ -292,6 +343,8 @@ namespace SolarSystem3DEngine
         {
             _currentCamera = _stationaryCamera;
             UpdateMatricesConfigurations();
+            UpdateSunModelMatrix();
+            UpdateDeathStarModelMatrix();
         }
 
         private void FollowingEarthCameraChecked(object sender, RoutedEventArgs e)
