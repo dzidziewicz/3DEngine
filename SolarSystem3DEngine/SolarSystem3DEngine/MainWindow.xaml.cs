@@ -2,22 +2,17 @@
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics;
-using System.Linq;
 using System.Numerics;
 using System.Runtime.CompilerServices;
-using System.Text;
-using System.Threading.Tasks;
-using System.Timers;
 using System.Windows;
-using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
-using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
-using System.Windows.Navigation;
-using System.Windows.Shapes;
 using System.Windows.Threading;
+using MathNet.Numerics.LinearAlgebra;
+using MathNet.Numerics.LinearAlgebra.Double;
+using SolarSystem3DEngine.Illuminations;
+using SolarSystem3DEngine.LightSources;
+using SolarSystem3DEngine.Shaders;
 using SolarSystem3DEngine.SoftEngine;
 
 namespace SolarSystem3DEngine
@@ -30,15 +25,91 @@ namespace SolarSystem3DEngine
     {
         public WriteableBitmap Bmp { get; set; }
         public string Fps { get; set; }
+        public bool PhongIlluminationChecked { get; set; }
+        public bool GoraudShadingChecked { get; set; }
 
+        private double _phi;
         private DateTime _previousDate;
-        private Device device;
-        Mesh[] meshes;// = new Mesh("Cube", 8, 12);
+        private Device _device;
+        private List<Mesh> _meshes;
         private ViewMatrixConfiguration _configuration;
         private ProjectionMatrixConfiguration _projectionMatrixConfiguration;
-        Camera camera = new Camera();
-        private DispatcherTimer _timer;
-        private double _phi;
+        private DenseMatrix _projectionViewMatrix;
+        private Camera _stationaryCamera;
+        private Camera _followingEarthCamera;
+        private Camera _currentCamera;
+        private PointLight[] _pointLights;
+        private GoraudShader _goraudShaderWithPhong;
+        private Mesh _earth;
+        private Mesh _sun;
+
+        #region Constants
+
+        private readonly Vector3 _cameraPosition = new Vector3(11f, 1f, -15);
+        private readonly Vector3 _stationaryCameraTarget = new Vector3(1, 1, 0);
+        private readonly Func<double, double> _earthModelCoordinateOriginX = (phi) => 1 + 4 * Math.Sin(phi);
+        private readonly Func<double, double> _earthModelCoordinateOriginY = (phi) => 1 + 4 * Math.Cos(phi);
+        private readonly Point3D _lightPosition = new Point3D(1, 1, -1);
+        #endregion
+        private void Page_Loaded()
+        {
+            // Choose the back buffer resolution here
+            Bmp = BitmapFactory.New((int)Image.Width, (int)Image.Height);
+            _meshes = new List<Mesh>();
+            _earth = LoadMeshes.LoadJsonFileAsync("Suzanne.babylon");
+            //            var _earth = LoadMeshes.LoadJsonFileAsync("plane.babylon");
+            //                        var _earth = LoadMeshes.LoadJsonFileAsync("sphere.babylon");
+            _earth.SetCoeffitients(new Vector3(50, 50, 50), new Vector3(0.5f, 0.5f, 0.5f), new Vector3(0.5f, 0.5f, 0.5f)); //0.5f, 0.5f, 0.5f
+            _meshes.Add(_earth);
+
+            _sun = LoadMeshes.LoadJsonFileAsync("sphere.babylon");
+            _sun.SetCoeffitients(new Vector3(50, 0, 0), new Vector3(0.5f, 0.5f, 0.5f), new Vector3(0.5f, 0.5f, 0.5f)); //0.5f, 0.5f, 0.5f
+            _meshes.Add(_sun);
+
+            var deathStar = LoadMeshes.LoadJsonFileAsync("sphere.babylon");
+            deathStar.SetCoeffitients(new Vector3(50, 0, 0), new Vector3(0.5f, 0.5f, 0.5f), new Vector3(0.5f, 0.5f, 0.5f)); //0.5f, 0.5f, 0.5f
+            _meshes.Add(deathStar);
+
+            PhongIlluminationChecked = GoraudShadingChecked = true;
+            _currentCamera = _stationaryCamera = new Camera(_cameraPosition, _stationaryCameraTarget);
+            _followingEarthCamera = new Camera(_stationaryCamera.Position,
+                new Vector3((float)_earthModelCoordinateOriginX(_phi), (float)_earthModelCoordinateOriginY(_phi), 0));
+
+
+            _projectionMatrixConfiguration = new ProjectionMatrixConfiguration(1, 100, 45, 1);
+            _pointLights = new[] { new PointLight(_lightPosition, Colors.White) /*, new PointLight(new Vector3(0, 240, 10), Colors.Red)*/ };
+            UpdateMatricesConfigurations();
+            UpdateSunModelMatrix();
+            UpdateDeathStarModelMatrix();
+            _phong = new PhongIllumination(_pointLights);
+            _blinn = new BlinnIllumination(_pointLights);
+            _currentShader = _goraudShaderWithPhong = new GoraudShader(_phong);
+            _goraudShaderWithBlinn = new GoraudShader(_blinn);
+            _phongShaderWithPhong = new PhongShader(_phong);
+            _phongShaderWithBlinn = new PhongShader(_blinn);
+
+            UpdateDevice();
+
+            CompositionTarget.Rendering += CompositionTarget_Rendering;
+        }
+
+        #region Shaders and Illuminations
+
+        private GoraudShader _goraudShaderWithBlinn;
+
+        private PhongShader _phongShaderWithPhong;
+
+        private PhongShader _phongShaderWithBlinn;
+
+        private ShaderBase _currentShader;
+
+        private PhongIllumination _phong;
+
+        private BlinnIllumination _blinn;
+
+        #endregion
+
+
         public MainWindow()
         {
             InitializeComponent();
@@ -47,80 +118,144 @@ namespace SolarSystem3DEngine
             DataContext = this;
         }
 
-        private void Page_Loaded()
-        {
-            // Choose the back buffer resolution here
-            Bmp = BitmapFactory.New((int)Image.Width, (int)Image.Height);
-            Bmp.Clear(Colors.Red);
-            _configuration = new ViewMatrixConfiguration();
-            _projectionMatrixConfiguration = new ProjectionMatrixConfiguration(1, 100, 45, 1);
-            device = new Device(Bmp, _phi, _configuration, _projectionMatrixConfiguration);
-
-            // Our XAML Image control
-            //Image.Source = Bmp;
-
-            //mesh.Vertices[0] = new Point3D(-1, 1, 1);
-            //mesh.Vertices[1] = new Point3D(1, 1, 1);
-            //mesh.Vertices[2] = new Point3D(-1, -1, 1);
-            //mesh.Vertices[3] = new Point3D(1, -1, 1);
-
-            //mesh.Faces[0] = new Face(0, 1, 2);
-            //mesh.Faces[1] = new Face(1, 2, 3);
-
-
-            //mesh.Vertices[4] = new Point3D(-1, 1, -1);
-            //mesh.Vertices[5] = new Point3D(1, 1, -1);
-            //mesh.Vertices[6] = new Point3D(-1, -1, -1);
-            //mesh.Vertices[7] = new Point3D(1, -1, -1);
-
-            //mesh.Faces[2] = new Face(4, 5, 6);
-            //mesh.Faces[3] = new Face(5, 6, 7);
-            //mesh.Faces[4] = new Face(1, 3, 5);
-            //mesh.Faces[5] = new Face(3, 5, 7);
-            //mesh.Faces[6] = new Face(0, 2, 4);
-            //mesh.Faces[7] = new Face(2, 4, 6);
-            //mesh.Faces[8] = new Face(0, 1, 4);
-            //mesh.Faces[9] = new Face(1, 4, 5);
-            //mesh.Faces[10] = new Face(2, 6, 7);
-            //mesh.Faces[11] = new Face(2, 3, 7);
-            meshes = LoadMeshes.LoadJsonFileAsync("Suzanne.babylon");
-
-
-
-            camera.Position = new Vector3(3.5f, 0.5f, 0.5f);
-            camera.Target = new Vector3(0, 0.1f, 0.5f);
-
-            _timer = new DispatcherTimer
-            {
-                Interval = TimeSpan.FromSeconds(1 / 60.0)
-            };
-            _timer.Tick += CompositionTarget_Rendering;
-            //_timer.Start();
-            // Registering to the XAML rendering loop
-            CompositionTarget.Rendering += CompositionTarget_Rendering;
-        }
-
         // Rendering loop handler
         private void CompositionTarget_Rendering(object sender, object e)
         {
             _phi += 0.01;
+            if (_currentCamera.Equals(_followingEarthCamera))
+            {
+                UpdateFollowingEarthCamera();
+                UpdateSunModelMatrix();
+                UpdateDeathStarModelMatrix();
+            }
+            UpdateEarthModelMatrix();
+
+            UpdateFps();
+
+            Rerender();
+        }
+
+        private void Rerender()
+        {
+            Bmp.Lock();
+
+            _device.Clear(0, 0, 0, 255);
+            _device.Render(_currentCamera, _meshes);
+
+            var p = new Point3D(1f, 1f, -1f);
+            var vectorCoordinates = DenseMatrix.OfArray(new[,]
+            {
+                {p.X},
+                {p.Y},
+                {p.Z},
+                {p.W}
+            });
+
+            var pprim = _projectionViewMatrix * vectorCoordinates;
+            var w = pprim[3, 0];
+            var newCoordinates = new Point3D(pprim) / w;
+            newCoordinates = Computations.Scale(newCoordinates, Bmp.PixelWidth, Bmp.PixelHeight);
+            Bmp.DrawEllipseCentered((int)newCoordinates.X, (int)newCoordinates.Y, 1, 1, Colors.Red);
+
+            _device.Present();
+            Bmp.Unlock();
+        }
+
+        private void UpdateEarthModelMatrix()
+        {
+            var earthModelMatrix = DenseMatrix.OfArray(new double[,]
+            {
+                {Math.Cos(_phi), -Math.Sin(_phi), 0, _earthModelCoordinateOriginX(_phi)},
+                {Math.Sin(_phi), Math.Cos(_phi), 0, _earthModelCoordinateOriginY(_phi)},
+                {0, 0, 1, 0},
+                {0, 0, 0, 1}
+            });
+            var viewModelMatrix = _configuration.ViewMatrix * earthModelMatrix;
+            _earth.ViewModelMatrix = viewModelMatrix;
+
+            _earth.ProjectionViewModelMatrix = _projectionMatrixConfiguration.ProjectionMatrix * viewModelMatrix;
+
+            var invertedNormalMatrix = Matrix<double>.Build.DenseOfColumnMajor(4, 4, viewModelMatrix.Values);
+            _earth.NormalMatrix = DenseMatrix.OfMatrix(invertedNormalMatrix.Inverse().Transpose());
+        }
+
+        private void UpdateSunModelMatrix()
+        {
+            var modelMatrix = DenseMatrix.OfArray(new double[,]
+            {
+                {1, 0, 0, 1},
+                {0, 1, 0, 1},
+                {0, 0, 1, 0},
+                {0, 0, 0, 1}
+            });
+            var viewModelMatrix = _configuration.ViewMatrix * modelMatrix;
+            _sun.ViewModelMatrix = viewModelMatrix;
+
+            _sun.ProjectionViewModelMatrix = _projectionMatrixConfiguration.ProjectionMatrix * viewModelMatrix;
+
+            var invertedNormalMatrix = Matrix<double>.Build.DenseOfColumnMajor(4, 4, viewModelMatrix.Values);
+            _sun.NormalMatrix = DenseMatrix.OfMatrix(invertedNormalMatrix.Inverse().Transpose());
+        }
+
+        private void UpdateDeathStarModelMatrix()
+        {
+            var modelMatrix = DenseMatrix.OfArray(new double[,]
+            {
+                {1, 0, 0, 4},
+                {0, 1, 0, 4},
+                {0, 0, 1, 0},
+                {0, 0, 0, 1}
+            });
+            var viewModelMatrix = _configuration.ViewMatrix * modelMatrix;
+            _meshes[2].ViewModelMatrix = viewModelMatrix;
+
+            _meshes[2].ProjectionViewModelMatrix = _projectionMatrixConfiguration.ProjectionMatrix * viewModelMatrix;
+
+            var invertedNormalMatrix = Matrix<double>.Build.DenseOfColumnMajor(4, 4, viewModelMatrix.Values);
+            _meshes[2].NormalMatrix = DenseMatrix.OfMatrix(invertedNormalMatrix.Inverse().Transpose());
+        }
+
+        private void UpdateFollowingEarthCamera()
+        {
+            _followingEarthCamera.Target = new Vector3((float)_earthModelCoordinateOriginX(_phi),
+                (float)_earthModelCoordinateOriginY(_phi), 0);
+            UpdateMatricesConfigurations();
+        }
+
+        private void UpdateMatricesConfigurations()
+        {
+            _configuration = new ViewMatrixConfiguration(_currentCamera.Position, _currentCamera.Target, new Vector3(0, 0, 1));
+            _projectionViewMatrix = _projectionMatrixConfiguration.ProjectionMatrix * _configuration.ViewMatrix;
+            foreach (var light in _pointLights)
+            {
+                var vectorCoordinates = DenseMatrix.OfArray(new[,]
+                {
+                    {light.Position.X},
+                    {light.Position.Y},
+                    {light.Position.Z},
+                    {light.Position.W}
+                });
+
+                var p = new Point3D(_configuration.ViewMatrix * vectorCoordinates);
+                light.WorldPosition = p;
+            }
+            //UpdateEarthModelMatrix();
+        }
+
+        private void UpdateFps()
+        {
             var now = DateTime.Now;
             var currentFps = 1000.0 / (now - _previousDate).TotalMilliseconds;
             _previousDate = now;
 
             Fps = $"{currentFps:0.00} fps";
             OnPropertyChanged("Fps");
-            device = new Device(Bmp, _phi, _configuration, _projectionMatrixConfiguration);
-            Bmp.Lock();
-            device.Clear(0, 0, 0, 255);
-            
-            // Doing the various matrix operations
-            device.Render(camera, meshes);
-            // Flushing the back buffer into the front buffer
-            device.Present();
-            Bmp.Unlock();
         }
 
+        private void UpdateDevice()
+        {
+            _device = new Device(Bmp, _pointLights, _currentShader);
+        }
         #region INotifyPropertyChanged Members
 
         /// <summary>
@@ -179,5 +314,42 @@ namespace SolarSystem3DEngine
         protected virtual bool ThrowOnInvalidPropertyName { get; private set; }
 
         #endregion // Debugging Aides
+
+        private void PhongIlluminationChcecked(object sender, RoutedEventArgs e)
+        {
+            _currentShader = GoraudShadingChecked ? (ShaderBase)_goraudShaderWithPhong : _phongShaderWithPhong;
+            UpdateDevice();
+        }
+
+        private void BlinnIlluminationChecked(object sender, RoutedEventArgs e)
+        {
+            _currentShader = GoraudShadingChecked ? (ShaderBase)_goraudShaderWithBlinn : _phongShaderWithBlinn;
+            UpdateDevice();
+        }
+
+        private void GoraudShaderChecked(object sender, RoutedEventArgs e)
+        {
+            _currentShader = PhongIlluminationChecked ? _goraudShaderWithPhong : _goraudShaderWithBlinn;
+            UpdateDevice();
+        }
+
+        private void PhongShaderChecked(object sender, RoutedEventArgs e)
+        {
+            _currentShader = PhongIlluminationChecked ? _phongShaderWithPhong : _phongShaderWithBlinn;
+            UpdateDevice();
+        }
+
+        private void StationaryCameraChecked(object sender, RoutedEventArgs e)
+        {
+            _currentCamera = _stationaryCamera;
+            UpdateMatricesConfigurations();
+            UpdateSunModelMatrix();
+            UpdateDeathStarModelMatrix();
+        }
+
+        private void FollowingEarthCameraChecked(object sender, RoutedEventArgs e)
+        {
+            _currentCamera = _followingEarthCamera;
+        }
     }
 }

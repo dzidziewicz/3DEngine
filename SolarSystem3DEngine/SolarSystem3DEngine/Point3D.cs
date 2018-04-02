@@ -29,6 +29,14 @@ namespace SolarSystem3DEngine
             W = (vector.RowCount == 4) ? vector[3, 0] : 1;
         }
 
+        public Point3D(Vector3 v)
+        {
+            X = v.X;
+            Y = v.Y;
+            Z = v.Z;
+            W = 0;
+        }
+
         public static implicit operator Vector2(Point3D point)
         {
             return new Vector2((float)point.X, (float)point.Y);
