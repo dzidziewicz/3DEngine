@@ -37,6 +37,7 @@ namespace SolarSystem3DEngine
         private DenseMatrix _projectionViewMatrix;
         private Camera _stationaryCamera;
         private Camera _followingEarthCamera;
+        private Camera _onEarthCamera;
         private Camera _currentCamera;
         private PointLight[] _pointLights;
         private GoraudShader _goraudShaderWithPhong;
@@ -50,6 +51,13 @@ namespace SolarSystem3DEngine
         private readonly Func<double, double> _earthModelCoordinateOriginX = (phi) => 1 + 4 * Math.Sin(phi);
         private readonly Func<double, double> _earthModelCoordinateOriginY = (phi) => 1 + 4 * Math.Cos(phi);
         private readonly Point3D _lightPosition = new Point3D(1, 1, -1);
+        private DenseMatrix EarthModelMatrix => DenseMatrix.OfArray(new double[,]
+                            {
+                                {Math.Cos(_phi), -Math.Sin(_phi), 0, _earthModelCoordinateOriginX(_phi)},
+                                {Math.Sin(_phi), Math.Cos(_phi), 0, _earthModelCoordinateOriginY(_phi)},
+                                {0, 0, 1, 0},
+                                {0, 0, 0, 1}
+                            });
         #endregion
         private void Page_Loaded()
         {
@@ -74,7 +82,7 @@ namespace SolarSystem3DEngine
             _currentCamera = _stationaryCamera = new Camera(_cameraPosition, _stationaryCameraTarget);
             _followingEarthCamera = new Camera(_stationaryCamera.Position,
                 new Vector3((float)_earthModelCoordinateOriginX(_phi), (float)_earthModelCoordinateOriginY(_phi), 0));
-
+            _onEarthCamera = new Camera(Vector3.One, Vector3.One);
 
             _projectionMatrixConfiguration = new ProjectionMatrixConfiguration(1, 100, 45, 1);
             _pointLights = new[] { new PointLight(_lightPosition, Colors.White) /*, new PointLight(new Vector3(0, 240, 10), Colors.Red)*/ };
@@ -128,6 +136,12 @@ namespace SolarSystem3DEngine
                 UpdateSunModelMatrix();
                 UpdateDeathStarModelMatrix();
             }
+            else if (_currentCamera.Equals(_onEarthCamera))
+            {
+                UpdateOnEarthCamera();
+                UpdateSunModelMatrix();
+                UpdateDeathStarModelMatrix();
+            }
             UpdateEarthModelMatrix();
 
             UpdateFps();
@@ -163,13 +177,14 @@ namespace SolarSystem3DEngine
 
         private void UpdateEarthModelMatrix()
         {
-            var earthModelMatrix = DenseMatrix.OfArray(new double[,]
-            {
-                {Math.Cos(_phi), -Math.Sin(_phi), 0, _earthModelCoordinateOriginX(_phi)},
-                {Math.Sin(_phi), Math.Cos(_phi), 0, _earthModelCoordinateOriginY(_phi)},
-                {0, 0, 1, 0},
-                {0, 0, 0, 1}
-            });
+            var earthModelMatrix = EarthModelMatrix;
+            //    DenseMatrix.OfArray(new double[,]
+            //{
+            //    {Math.Cos(_phi), -Math.Sin(_phi), 0, _earthModelCoordinateOriginX(_phi)},
+            //    {Math.Sin(_phi), Math.Cos(_phi), 0, _earthModelCoordinateOriginY(_phi)},
+            //    {0, 0, 1, 0},
+            //    {0, 0, 0, 1}
+            //});
             var viewModelMatrix = _configuration.ViewMatrix * earthModelMatrix;
             _earth.ViewModelMatrix = viewModelMatrix;
 
@@ -219,6 +234,22 @@ namespace SolarSystem3DEngine
         {
             _followingEarthCamera.Target = new Vector3((float)_earthModelCoordinateOriginX(_phi),
                 (float)_earthModelCoordinateOriginY(_phi), 0);
+            UpdateMatricesConfigurations();
+        }
+
+        private void UpdateOnEarthCamera()
+        {
+            //var vectorCoordinates = DenseMatrix.OfArray(new[,]
+            //{
+            //    {_earth.Vertices[0].Coordinates.X},
+            //    {_earth.Vertices[0].Coordinates.Y},
+            //    {_earth.Vertices[0].Coordinates.Z},
+            //    {_earth.Vertices[0].Coordinates.W}
+            //});
+            //_onEarthCamera.Position = new Point3D(EarthModelMatrix * vectorCoordinates);
+            _onEarthCamera.Position = new Vector3((float)_earthModelCoordinateOriginX(_phi - 0.1),
+                (float)_earthModelCoordinateOriginY(_phi - 0.1), 0);
+            _onEarthCamera.Target = new Vector3(1, 1, 0);
             UpdateMatricesConfigurations();
         }
 
@@ -350,6 +381,11 @@ namespace SolarSystem3DEngine
         private void FollowingEarthCameraChecked(object sender, RoutedEventArgs e)
         {
             _currentCamera = _followingEarthCamera;
+        }
+
+        private void OnEarthCameraChecked(object sender, RoutedEventArgs e)
+        {
+            _currentCamera = _onEarthCamera;
         }
     }
 }
