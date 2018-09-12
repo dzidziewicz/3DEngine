@@ -22,10 +22,10 @@ namespace SolarSystem3DEngine
             private readonly object[] _lockBuffer;
             private readonly int _renderWidth;
             private readonly int _renderHeight;
-            private readonly PointLight[] _pointLights;
+            private readonly LightBase[] _pointLights;
             private readonly ShaderBase _shader;
 
-            public Device(WriteableBitmap bmp, PointLight[] pointLights, ShaderBase shader)
+            public Device(WriteableBitmap bmp, LightBase[] pointLights, ShaderBase shader)
             {
                 _bmp = bmp;
                 _pointLights = pointLights;

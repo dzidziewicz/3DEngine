@@ -52,6 +52,10 @@ namespace SolarSystem3DEngine
             return new Point3D(p1.X + p2.X, p1.Y + p2.Y, p1.Z + p2.Z, p1.W + p2.W);
         }
 
+        public static Point3D operator -(Point3D p1, Point3D p2)
+        {
+            return new Point3D(p1.X - p2.X, p1.Y - p2.Y, p1.Z - p2.Z, p1.W - p2.W);
+        }
         public static Point3D operator /(Point3D p, double n)
         {
             return new Point3D(p.X / n, p.Y / n, p.Z / n, p.W / n);

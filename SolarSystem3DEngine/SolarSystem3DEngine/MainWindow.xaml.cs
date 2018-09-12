@@ -38,7 +38,7 @@ namespace SolarSystem3DEngine
         private Camera _stationaryCamera;
         private Camera _followingEarthCamera;
         private Camera _currentCamera;
-        private PointLight[] _pointLights;
+        private LightBase[] _pointLights;
         private GoraudShader _goraudShaderWithPhong;
         private Mesh _earth;
         private Mesh _sun;
@@ -77,7 +77,11 @@ namespace SolarSystem3DEngine
 
 
             _projectionMatrixConfiguration = new ProjectionMatrixConfiguration(1, 100, 45, 1);
-            _pointLights = new[] { new PointLight(_lightPosition, Colors.White) /*, new PointLight(new Vector3(0, 240, 10), Colors.Red)*/ };
+            _pointLights = new LightBase[]
+            {
+                 new PointLight(_lightPosition, Colors.OrangeRed) , /*new PointLight(new Vector3(0, 240, 10), Colors.Red)*/
+                new SpotLight(_lightPosition, Colors.Blue, new Point3D(3d, 3d, 1d), 1), 
+            };
             UpdateMatricesConfigurations();
             UpdateSunModelMatrix();
             UpdateDeathStarModelMatrix();
@@ -228,16 +232,7 @@ namespace SolarSystem3DEngine
             _projectionViewMatrix = _projectionMatrixConfiguration.ProjectionMatrix * _configuration.ViewMatrix;
             foreach (var light in _pointLights)
             {
-                var vectorCoordinates = DenseMatrix.OfArray(new[,]
-                {
-                    {light.Position.X},
-                    {light.Position.Y},
-                    {light.Position.Z},
-                    {light.Position.W}
-                });
-
-                var p = new Point3D(_configuration.ViewMatrix * vectorCoordinates);
-                light.WorldPosition = p;
+               light.UpdateWorldCoordinates(_configuration.ViewMatrix);
             }
             //UpdateEarthModelMatrix();
         }

@@ -78,6 +78,7 @@
     <Compile Include="Illuminations\PhongIllumination.cs" />
     <Compile Include="LightSources\LightBase.cs" />
     <Compile Include="LightSources\PointLight.cs" />
+    <Compile Include="LightSources\SpotLight.cs" />
     <Compile Include="LoadMeshes.cs" />
     <Compile Include="PhongScanlineData.cs" />
     <Compile Include="ProjectionMatrixConfiguration.cs" />
