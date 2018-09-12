@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics;
+using System.Linq;
 using System.Numerics;
 using System.Runtime.CompilerServices;
 using System.Windows;
@@ -38,7 +39,7 @@ namespace SolarSystem3DEngine
         private Camera _stationaryCamera;
         private Camera _followingEarthCamera;
         private Camera _currentCamera;
-        private LightBase[] _pointLights;
+        private List<LightBase> _lights;
         private GoraudShader _goraudShaderWithPhong;
         private Mesh _earth;
         private Mesh _sun;
@@ -63,7 +64,7 @@ namespace SolarSystem3DEngine
             _meshes.Add(_earth);
 
             _sun = LoadMeshes.LoadJsonFileAsync("sphere.babylon");
-            _sun.SetCoeffitients(new Vector3(50, 0, 0), new Vector3(0.5f, 0.5f, 0.5f), new Vector3(0.5f, 0.5f, 0.5f)); //0.5f, 0.5f, 0.5f
+            _sun.SetCoeffitients(new Vector3(255, 204, 0), new Vector3(0.5f, 0.5f, 0.5f), new Vector3(0.5f, 0.5f, 0.5f)); //0.5f, 0.5f, 0.5f
             _meshes.Add(_sun);
 
             var deathStar = LoadMeshes.LoadJsonFileAsync("sphere.babylon");
@@ -77,16 +78,17 @@ namespace SolarSystem3DEngine
 
 
             _projectionMatrixConfiguration = new ProjectionMatrixConfiguration(1, 100, 45, 1);
-            _pointLights = new LightBase[]
+            _lights = new List<LightBase>
             {
-                 new PointLight(_lightPosition, Colors.OrangeRed) , /*new PointLight(new Vector3(0, 240, 10), Colors.Red)*/
-                new SpotLight(_lightPosition, Colors.Blue, new Point3D(3d, 3d, 1d), 1), 
+                /* new PointLight(_lightPosition, Colors.OrangeRed) , new PointLight(new Vector3(0, 240, 10), Colors.Red)*/
+                new SpotLight(_lightPosition, Colors.Blue, new Point3D(1d, 1, -1d), 1), //new Point3D(3d, 3d, 1d)
             };
+
             UpdateMatricesConfigurations();
             UpdateSunModelMatrix();
             UpdateDeathStarModelMatrix();
-            _phong = new PhongIllumination(_pointLights);
-            _blinn = new BlinnIllumination(_pointLights);
+            _phong = new PhongIllumination(_lights);
+            _blinn = new BlinnIllumination(_lights);
             _currentShader = _goraudShaderWithPhong = new GoraudShader(_phong);
             _goraudShaderWithBlinn = new GoraudShader(_blinn);
             _phongShaderWithPhong = new PhongShader(_phong);
@@ -133,6 +135,7 @@ namespace SolarSystem3DEngine
                 UpdateDeathStarModelMatrix();
             }
             UpdateEarthModelMatrix();
+            UpdateSpotLightOnEarth();
 
             UpdateFps();
 
@@ -165,6 +168,14 @@ namespace SolarSystem3DEngine
             Bmp.Unlock();
         }
 
+        private void UpdateSpotLightOnEarth()
+        {
+            var light = _lights.OfType<SpotLight>().First();
+            light.Position = new Point3D(_earthModelCoordinateOriginX(_phi), _earthModelCoordinateOriginY(_phi), 0);
+
+            light.UpdateWorldCoordinates(_configuration.ViewMatrix);
+        }
+
         private void UpdateEarthModelMatrix()
         {
             var earthModelMatrix = DenseMatrix.OfArray(new double[,]
@@ -174,6 +185,7 @@ namespace SolarSystem3DEngine
                 {0, 0, 1, 0},
                 {0, 0, 0, 1}
             });
+
             var viewModelMatrix = _configuration.ViewMatrix * earthModelMatrix;
             _earth.ViewModelMatrix = viewModelMatrix;
 
@@ -230,7 +242,7 @@ namespace SolarSystem3DEngine
         {
             _configuration = new ViewMatrixConfiguration(_currentCamera.Position, _currentCamera.Target, new Vector3(0, 0, 1));
             _projectionViewMatrix = _projectionMatrixConfiguration.ProjectionMatrix * _configuration.ViewMatrix;
-            foreach (var light in _pointLights)
+            foreach (var light in _lights)
             {
                light.UpdateWorldCoordinates(_configuration.ViewMatrix);
             }
@@ -249,7 +261,7 @@ namespace SolarSystem3DEngine
 
         private void UpdateDevice()
         {
-            _device = new Device(Bmp, _pointLights, _currentShader);
+            _device = new Device(Bmp, _lights, _currentShader);
         }
         #region INotifyPropertyChanged Members
 

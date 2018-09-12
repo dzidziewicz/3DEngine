@@ -12,8 +12,8 @@ namespace SolarSystem3DEngine.LightSources
     public class SpotLight : LightBase
     {
         public double CosOfAngleOfAperture { get; set; } // should be in range 0 - 1
-        public Point3D Direction { get; set; }
-        public Point3D WorldDirection { get; set; }
+        public Point3D Direction { get; set; }          // point towards which spot light is directed
+        public Point3D WorldDirection { get; set; }     // same as above but in world coordinates
         public double P { get; set; }                   // coeffitient describing light intensity distribution across cone
 
         public SpotLight(Point3D position, Color color, Point3D direction, double p, double cosOfAngleOfAperture = 0.2) : base(position, color)

@@ -22,10 +22,10 @@ namespace SolarSystem3DEngine
             private readonly object[] _lockBuffer;
             private readonly int _renderWidth;
             private readonly int _renderHeight;
-            private readonly LightBase[] _pointLights;
+            private readonly List<LightBase> _pointLights;
             private readonly ShaderBase _shader;
 
-            public Device(WriteableBitmap bmp, LightBase[] pointLights, ShaderBase shader)
+            public Device(WriteableBitmap bmp, List<LightBase> pointLights, ShaderBase shader)
             {
                 _bmp = bmp;
                 _pointLights = pointLights;
@@ -107,7 +107,7 @@ namespace SolarSystem3DEngine
 
                 var normal3DWorld = normalMatrix * vectorNormal;
                 var newNormal = new Point3D(normal3DWorld);
-                newNormal = newNormal / newNormal.W;
+                newNormal = newNormal / newNormal.W; // TODO: Is it necessary?
 
                 return new Vertex { Coordinates = newCoordinates, Normal = newNormal, WorldCoordinates = new3DWorld };
             }
