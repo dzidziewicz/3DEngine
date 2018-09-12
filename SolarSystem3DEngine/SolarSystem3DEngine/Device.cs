@@ -1,13 +1,9 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Numerics;
+﻿using System.Collections.Generic;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using MathNet.Numerics.LinearAlgebra.Double;
-using SharpDX;
-using SolarSystem3DEngine.LightSources;
 using SolarSystem3DEngine.Shaders;
 
 namespace SolarSystem3DEngine
@@ -22,32 +18,22 @@ namespace SolarSystem3DEngine
             private readonly object[] _lockBuffer;
             private readonly int _renderWidth;
             private readonly int _renderHeight;
-            private readonly List<LightBase> _pointLights;
             private readonly ShaderBase _shader;
 
-            public Device(WriteableBitmap bmp, List<LightBase> pointLights, ShaderBase shader)
+            public Device(WriteableBitmap bmp, ShaderBase shader)
             {
                 _bmp = bmp;
-                _pointLights = pointLights;
                 _shader = shader;
                 _shader.DrawPoint = DrawPoint;
                 _renderHeight = bmp.PixelHeight;
                 _renderWidth = bmp.PixelWidth;
-                _backBuffer = (int*)_bmp.BackBuffer.ToPointer();//new int[renderWidth*renderHeight];//
+                _backBuffer = (int*)_bmp.BackBuffer.ToPointer();
                 _depthBuffer = new double[_renderWidth * _renderHeight];
                 _lockBuffer = new object[_renderWidth * _renderHeight];
                 for (var i = 0; i < _lockBuffer.Length; i++)
                 {
                     _lockBuffer[i] = new object();
                 }
-
-                //                    = DenseMatrix.OfArray(new double[,]
-                //                {
-                //                    {Math.Cos(phi), -Math.Sin(phi), 0, Math.Sin(phi)},
-                //                    {Math.Sin(phi), Math.Cos(phi), 0, Math.Cos(phi)},
-                //                    {0, 0, 1, 0},
-                //                    {0, 0, 0, 1}
-                //                });
             }
 
             public void Clear(byte r, byte g, byte b, byte a)
@@ -63,8 +49,6 @@ namespace SolarSystem3DEngine
             {
                 // request a redraw of the entire bitmap
                 _bmp.AddDirtyRect(new Int32Rect(0, 0, _renderWidth, _renderHeight));
-                //int stride = 4 * ((renderWidth * 4 + 3) / 4);
-                //_bmp.WritePixels(new Int32Rect(0, 0, renderWidth, renderHeight), _backBuffer, stride, 0);
             }
 
             // Called to put a pixel on screen at a specific X,Y coordinates
@@ -107,7 +91,7 @@ namespace SolarSystem3DEngine
 
                 var normal3DWorld = normalMatrix * vectorNormal;
                 var newNormal = new Point3D(normal3DWorld);
-                newNormal = newNormal / newNormal.W; // TODO: Is it necessary?
+                newNormal = newNormal / newNormal.W; 
 
                 return new Vertex { Coordinates = newCoordinates, Normal = newNormal, WorldCoordinates = new3DWorld };
             }
@@ -124,10 +108,9 @@ namespace SolarSystem3DEngine
             {
                 foreach (var mesh in meshes)
                 {
-                    _shader.Illumination.SetCoeffitients(mesh.KAmbient, mesh.KDiffuse, mesh.KSpecular);
-                    //var faceIndex = 0;
+                    _shader.Illumination.SetCoeffitients(mesh.KAmbient, mesh.KDiffuse, mesh.KSpecular, mesh.MSpecular);
+
                     Parallel.For(0, mesh.Faces.Length, faceIndex =>
-                    //foreach(var face in mesh.Faces)
                     {
                         var face = mesh.Faces[faceIndex];
 
@@ -140,7 +123,6 @@ namespace SolarSystem3DEngine
                         var pixelC = InvalidatePoint(vertexC, mesh.ViewModelMatrix, mesh.ProjectionViewModelMatrix, mesh.NormalMatrix);
 
                         _shader.DrawTriangle(pixelA, pixelB, pixelC);
-                        //faceIndex++;
                     });
                 }
             }

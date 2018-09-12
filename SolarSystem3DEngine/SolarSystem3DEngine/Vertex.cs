@@ -1,5 +1,4 @@
-﻿using System.Numerics;
-
+﻿
 namespace SolarSystem3DEngine
 {
     public struct Vertex

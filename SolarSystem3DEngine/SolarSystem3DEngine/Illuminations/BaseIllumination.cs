@@ -2,10 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows.Media;
-using MathNet.Numerics.Optimization;
 using SolarSystem3DEngine.LightSources;
 
 namespace SolarSystem3DEngine.Illuminations
@@ -15,6 +12,7 @@ namespace SolarSystem3DEngine.Illuminations
         public Vector3 KAmbient { get; set; }
         public Vector3 KDiffuse { get; set; }
         public Vector3 KSpecular { get; set; }
+        public int MSpecular { get; set; }
 
         public List<LightBase> Lights { get; set; }
 
@@ -32,7 +30,7 @@ namespace SolarSystem3DEngine.Illuminations
             {
                 var vectorToLight = Vector3.Normalize(light.WorldPosition - position);
                 var diffPlusSpec = GetDiffuse(vectorToLight, normal) +
-                                   GetSpecular(vectorToLight, vectorToViewer, normal, 2);
+                                   GetSpecular(vectorToLight, vectorToViewer, normal, MSpecular);
                 intensity += Vector3.Multiply(light.GetIntensityInPoint(position), diffPlusSpec);
             }
 
@@ -48,10 +46,8 @@ namespace SolarSystem3DEngine.Illuminations
 
         protected Vector3 GetDiffuse(Vector3 light, Vector3 normal)
         {
-            //var cos = Vector3.Dot(normal, light);
-            var cos = Computations.NormalizeCosinus(Vector3.Dot(normal, light));// Math.Max(0, Math.Min(1, Vector3.Dot(normal, light)));
+            var cos = Computations.NormalizeCosinus(Vector3.Dot(normal, light));
             return Vector3.Multiply(cos, KDiffuse);
-
         }
 
         protected Color VectorToColor(Vector3 I)
@@ -62,11 +58,12 @@ namespace SolarSystem3DEngine.Illuminations
             return Color.FromArgb(1, r, g, b);
         }
 
-        public void  SetCoeffitients(Vector3 kAmbient, Vector3 kDiffuse, Vector3 kSpecular)
+        public void  SetCoeffitients(Vector3 kAmbient, Vector3 kDiffuse, Vector3 kSpecular, int mSpecular)
         {
             KAmbient = kAmbient;
             KDiffuse = kDiffuse;
             KSpecular = kSpecular;
+            MSpecular = mSpecular;
         }
     }
 }

@@ -39,12 +39,12 @@ namespace SolarSystem3DEngine
 
         public static double ScaleW(double p, int renderWidth)
         {
-            return (p + 1) / 2 * renderWidth; //point.X * _bmp.PixelWidth + _bmp.PixelWidth / 2.0f;
+            return (p + 1) / 2 * renderWidth;
         }
 
         public static double ScaleH(double p, int renderHeight)
         {
-            return (p + 1) / 2 * renderHeight; //-point.Y * _bmp.PixelHeight + _bmp.PixelHeight / 2.0f;
+            return (p + 1) / 2 * renderHeight;
         }
 
         public static int ConvertToArgb32(Color color)

@@ -14,7 +14,8 @@ namespace SolarSystem3DEngine
         public Vector3 KAmbient { get; set; }
         public Vector3 KDiffuse { get; set; }
         public Vector3 KSpecular { get; set; }
-
+        public int MSpecular { get; set; }
+        
         public DenseMatrix ViewModelMatrix { get; set; }
         public DenseMatrix ProjectionViewModelMatrix { get; set; }
         public DenseMatrix NormalMatrix { get; set; }
@@ -26,11 +27,12 @@ namespace SolarSystem3DEngine
             Name = name;
         }
 
-        public void SetCoeffitients(Vector3 kAmbient, Vector3 kDiffuse, Vector3 kSpecular)
+        public void SetCoeffitients(Vector3 kAmbient, Vector3 kDiffuse, Vector3 kSpecular, int mSpecular)
         {
             KAmbient = kAmbient;
             KDiffuse = kDiffuse;
             KSpecular = kSpecular;
+            MSpecular = mSpecular;
         }
     }
 }

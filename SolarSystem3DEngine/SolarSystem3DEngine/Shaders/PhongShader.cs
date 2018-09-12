@@ -17,7 +17,8 @@ namespace SolarSystem3DEngine.Shaders
             var p2 = v2.Coordinates;
             var p3 = v3.Coordinates;
 
-            var viewerPosition = Vector3.Zero;//new Vector3(320, 240, 0);
+            var viewerPosition = Vector3.Zero;
+
 
             // inverse slopes
             var dP1P2 = (p2.Y - p1.Y > 0) ? (p2.X - p1.X) / (p2.Y - p1.Y) : 0;
@@ -62,16 +63,19 @@ namespace SolarSystem3DEngine.Shaders
             // Thanks to current Y, we can compute the gradient to compute others values like
             // the starting X (sx) and ending X (ex) to draw between
             // if pa.Y == pb.Y or pc.Y == pd.Y, gradient is forced to 1
+
             var gradient1 = pa.Y != pb.Y ? (currentY - pa.Y) / (pb.Y - pa.Y) : 1;
             var gradient2 = pc.Y != pd.Y ? (currentY - pc.Y) / (pd.Y - pc.Y) : 1;
 
             var startNormalVector = InterpolateVector(va.Normal, vb.Normal, gradient1);
             var endNormalVector = InterpolateVector(vc.Normal, vd.Normal, gradient2);
+
             // interpolated pixel screen coordinates
             var startCoordinates =
                 InterpolateVector(va.Coordinates, vb.Coordinates, gradient1);
             var endCoordinates =
                 InterpolateVector(vc.Coordinates, vd.Coordinates, gradient2);
+
             // interpolated objects' coordinates in 3D world 
             var startWorldCoordinates =
                 InterpolateVector(va.WorldCoordinates, vb.WorldCoordinates, gradient1);

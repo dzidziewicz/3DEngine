@@ -5,14 +5,14 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:SolarSystem3DEngine"
         mc:Ignorable="d"
-        Title="MainWindow" Height="750" Width="740">
+        Title="MainWindow" Height="750" Width="840">
     <Grid HorizontalAlignment="Stretch" VerticalAlignment="Stretch">
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="8*" />
-            <ColumnDefinition Width="*" />
+            <ColumnDefinition Width="2*" />
         </Grid.ColumnDefinitions>
         <StackPanel Grid.Column="1">
-            <TextBlock Text="{Binding Fps, Mode=TwoWay}" />
+            <TextBlock Text="{Binding Fps, Mode=TwoWay}" Margin="0 33 0 3" />
             <TextBlock Text="Illumination" Margin="0 10 0 3"/>
             <RadioButton Content="Phong" IsChecked="{Binding PhongIlluminationChecked, Mode=TwoWay}" Checked="PhongIlluminationChcecked" GroupName="Illumination" />
             <RadioButton Content="Blinn" Checked="BlinnIlluminationChecked" GroupName="Illumination" />
@@ -23,6 +23,14 @@
             <TextBlock Text="Camera" Margin="0 10 0 3"/>
             <RadioButton Content="Stationary" IsChecked="{Binding GoraudShadingChecked, Mode=TwoWay}" Checked="StationaryCameraChecked" GroupName="Camera" />
             <RadioButton Content="Following Earth" Checked="FollowingEarthCameraChecked" GroupName="Camera" />
+            
+            <TextBlock Text="The Earth is:" Margin="0 10 0 3"/>
+            <RadioButton Content="Round" IsChecked="{Binding RoundEarthChecked, Mode=TwoWay}" Checked="RoundEarthIsChecked" GroupName="Earth" />
+            <RadioButton Content="Flat" Checked="FlatEarthIsChecked" GroupName="Earth" />
+
+            <TextBlock Text="Spot light direction:" Margin="0 10 0 3"/>
+            <RadioButton Content="Sun" IsChecked="{Binding SpotLightAimsAtSunChecked, Mode=TwoWay}" Checked="SpotLightAimsAtSunIsChecked" GroupName="SpotLight" />
+            <RadioButton Content="Death Star" Checked="SpotLightAimsAtDeathStarIsChecked" GroupName="SpotLight" />
 
         </StackPanel>
         <Image Grid.Column="0" Name="Image" Source="{Binding Bmp, Mode=TwoWay}" Stretch="None"
