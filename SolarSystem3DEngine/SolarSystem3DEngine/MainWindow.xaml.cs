@@ -70,7 +70,7 @@ namespace SolarSystem3DEngine
             _meshes.Add(_sun);
 
             var deathStar = LoadMeshes.LoadJsonFileAsync("sphere.babylon");
-            deathStar.SetCoeffitients(new Vector3(90, 100, 119), new Vector3(0.5f, 0.5f, 0.5f), new Vector3(0.5f, 0.5f, 0.5f), 50);
+            deathStar.SetCoeffitients(new Vector3(90, 100, 119), new Vector3(0.5f, 0.5f, 0.5f), new Vector3(0.5f, 0.5f, 0.5f), 20);
             _meshes.Add(deathStar);
 
             PhongIlluminationChecked = GoraudShadingChecked = RoundEarthChecked = SpotLightAimsAtSunChecked = true;
